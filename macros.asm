@@ -31,8 +31,9 @@
 .label zr6 = zr5+2
 .label zr6l = zr6
 .label zr6h = zr6+1
-.print "zr5=$"+toHexString(zr5)
-.print "zr6=$"+toHexString(zr6)
+.label zr7 = zr6+2
+.label zr7l = zr7
+.label zr7h = zr7+1
 .label ztmp = $b0
 .label zsave = $b2
 
