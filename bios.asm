@@ -3204,7 +3204,7 @@ canal:
 // build_path : construction path cible
 // entrée : r0 = adresse pstring résultat
 // r1 = ppath source
-// sortie = r0 à jour
+// sortie = r0 à jour = path:nom
 //----------------------------------------------------
 
 do_build_path:
@@ -3233,7 +3233,8 @@ pas_path:
     and #PPATH.WITH_NAME
     beq pas_name
 
-wait2:
+    stw_r(reg_zsrc, msg_sep)
+    jsr do_str_cat
 
     str_r(reg_zsrc, 1)
     lda #3
@@ -3247,6 +3248,8 @@ wait2:
 pas_name:
     clc
     rts
+msg_sep:
+    pstring(":")
 }
 
 //----------------------------------------------------
