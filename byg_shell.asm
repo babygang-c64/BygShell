@@ -585,14 +585,16 @@ do_cat:
 
     // passe le nom en r0 par un objet ppath
     // mise à jour device + nom construit dans r0
+
     stw_r(1, work_path)
-    clc
     bios(bios.prep_path)
+    stw_r(1, work_path)
     call_bios(bios.set_device_from_path, work_path)
     stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
     call_bios(bios.print_path, work_path)
-
+    call_bios(bios.pprintnl, work_buffer)
+    stw_r(0, work_buffer)
     // ouverture en lecture, nom dans r0
     ldx #2
     clc
@@ -693,7 +695,7 @@ cmd_do_cmd:
 {
 
     // analyse du path en R0, retour = work_path
-    str_r(5, 1)
+    push_r(1)
     stw_r(1, work_path)
     bios(bios.prep_path)
 
@@ -706,7 +708,9 @@ cmd_do_cmd:
     ldx work_path+1
     lda bios.devices,x
     bne pas_erreur_device
+
     call_bios(bios.error, msg_error.device_not_present)
+    pop_r(1)
     sec
     rts
 
@@ -720,18 +724,15 @@ pas_de_device:
     call_bios(bios.build_path, work_buffer)
     call_bios(bios.print_path, work_path)
     call_bios(bios.pprintnl, work_buffer)
-    clc
-    rts
-    
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
     sty work_buffer2
-    stw_r(reg_zdest, work_buffer2)
-    str_r(reg_zsrc, 5)
-    jsr bios.do_str_cat
 
     stw_r(reg_zdest, work_buffer2)
+    pop_r(reg_zsrc)
+    jsr bios.do_str_cat
+
     stw_r(reg_zsrc, work_buffer)
     jsr bios.do_str_cat
 
