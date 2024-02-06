@@ -2309,7 +2309,7 @@ process_entree:
     sty suite_lecture
     jsr convert_device_partition
     jsr extract_path_name
-    //jsr update_path_type
+    jsr update_path_type
     jmp fin_prep_path
 
 suite_lecture:
@@ -3209,36 +3209,42 @@ canal:
 
 do_build_path:
 {
-    // positionne source sur la 1ère chaine du ppath
-    str_r(reg_zsrc, 1)
-    lda #3
-    add_r(reg_zsrc)
-    
-    str_r(reg_zdest, 0)
     // raz dest
+    str_r(reg_zdest, 0)
     ldy #0
     tya
     sta (zdest),y
 
-    // ajoute 1ère chaine du path (path ou nom seul)
-    jsr do_str_cat
-
-    // est-ce qu'il y a 2 chaines ?
     ldy #0
     lda (zr1),y
-    and #PPATH.WITH_PATH+PPATH.WITH_NAME
-    cmp #PPATH.WITH_PATH
-    beq un_seul
-    cmp #PPATH.WITH_NAME
-    beq un_seul
+    and #PPATH.WITH_PATH
+    beq pas_path
 
-    // oui, ajoute la 2ème chaine
     str_r(reg_zsrc, 1)
+    lda #3
+    add_r(reg_zsrc)
+
+    jsr do_str_cat
+
+pas_path:
+
+    ldy #0
+    lda (zr1),y
+    and #PPATH.WITH_NAME
+    beq pas_name
+
+wait2:
+
+    str_r(reg_zsrc, 1)
+    lda #3
+    add_r(reg_zsrc)
     lda (zsrc),y
     add_r(reg_zsrc)
-    add_r(3)
+    inc_r(reg_zsrc)
+
     jsr do_str_cat
-un_seul:
+
+pas_name:
     clc
     rts
 }

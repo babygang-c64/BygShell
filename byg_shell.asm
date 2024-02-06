@@ -720,10 +720,9 @@ pas_de_device:
     call_bios(bios.build_path, work_buffer)
     call_bios(bios.print_path, work_path)
     call_bios(bios.pprintnl, work_buffer)
-    //tmp sortie
     clc
     rts
-
+    
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
