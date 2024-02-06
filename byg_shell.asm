@@ -586,11 +586,11 @@ do_cat:
     // passe le nom en r0 par un objet ppath
     // mise à jour device + nom construit dans r0
     stw_r(1, work_path)
+    clc
     bios(bios.prep_path)
     call_bios(bios.set_device_from_path, work_path)
     stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
-
     call_bios(bios.print_path, work_path)
 
     // ouverture en lecture, nom dans r0
@@ -691,11 +691,12 @@ num_lignes:
 
 cmd_do_cmd:
 {
+
     // analyse du path en R0, retour = work_path
     str_r(5, 1)
     stw_r(1, work_path)
     bios(bios.prep_path)
-    //jsr bios.do_pprinthex8a
+
     lda work_path
     and #PPATH.WITH_DEVICE
     beq pas_de_device
@@ -715,20 +716,27 @@ pas_erreur_device:
 
 pas_de_device:
     // construction du path cible dans work_buffer
-
+    stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
+    call_bios(bios.print_path, work_path)
+    call_bios(bios.pprintnl, work_buffer)
+    //tmp sortie
+    clc
+    rts
 
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
     sty work_buffer2
-    push_r(0)
-    stw_r(0, work_buffer2)
-    str_r(1, 5)
-    bios(bios.add_str)
-    pop_r(1)
-    stw_r(0, work_buffer2)
-    bios(bios.add_str)
+    stw_r(reg_zdest, work_buffer2)
+    str_r(reg_zsrc, 5)
+    jsr bios.do_str_cat
+
+    stw_r(reg_zdest, work_buffer2)
+    stw_r(reg_zsrc, work_buffer)
+    jsr bios.do_str_cat
+
+    call_bios(bios.pprintnl, work_buffer2)
 
     lda work_buffer2
     ldx #<work_buffer2+1
@@ -994,7 +1002,7 @@ pas_de_parametres:
     ldx #1
     call_bios(bios.list_get, parameters.list)
     stw_r(1, filtre)
-    bios(bios.copy_str)
+    bios(bios.str_copy)
 
 pas_filtre:
     lda #0
@@ -1078,8 +1086,8 @@ pas_ouvert:
 
     //BRK//*
     stw_r(1, dir_entry.filename)
-    call_bios(bios.filter, filtre)
-    bcs filtre_ko
+    //call_bios(bios.filter, filtre)
+    //bcs filtre_ko
 
     call_bios(bios.pprint, dir_entry.type)
 
@@ -1338,26 +1346,6 @@ pas_copie_history:
 }
 
 toplevel:
-
-    stw_r(0, test1)
-    stw_r(1, work_path)
-    clc
-    jsr bios.do_prep_path2
-    call_bios(bios.print_path, work_path)
-loop:
-    inc $d020
-    jmp loop
-
-test1:
-    //pstring("8:/PATH")
-    //pstring("FICHIER.PRG")
-    //pstring("10:/CHEMIN/FICHIER.PRG")
-    pstring("9:17/PATH/PATH2/FILE")
-    //pstring("/PATH")
-    //pstring("/")
-    jmp toplevel2
-
-toplevel2:
     // affiche le prompt
     stw_r(0, varprompt)
     jsr bios.do_getvar
@@ -1381,7 +1369,7 @@ toplevel2:
 
     // pas de commande = boucle
     lda parameters.list
-    beq toplevel2
+    beq toplevel
 
     ldx #0
     call_bios(bios.list_get, parameters.list)
@@ -1389,7 +1377,7 @@ toplevel2:
     bcc non_trouve
     // exécute la commande
     jsr command_execute
-    jmp toplevel2
+    jmp toplevel
 
     // commande non trouvée en interne, essaye en externe
 non_trouve:
@@ -1398,7 +1386,7 @@ non_trouve:
     //call_bios(bios.pprintnl, msg_non_trouve)
 
     // et boucle sur le toplevel
-    jmp toplevel2
+    jmp toplevel
 
 command_execute:
 {
@@ -1600,7 +1588,7 @@ fin_de_parametre:
     stw_r(1, work_buffer)
     jmp add_to_list
 do_eval:
-    call_bios(bios.eval_str, work_buffer)
+    call_bios(bios.str_expand, work_buffer)
 add_to_list:
     call_bios(bios.list_add, parameters.list)
     rts
@@ -1707,7 +1695,7 @@ cmd_help:
     call_bios(bios.list_get, parameters.list)
     str_r(5, 0)
     stw_r(1, work_buffer)
-    call_bios(bios.eval_str, help_location)
+    call_bios(bios.str_expand, help_location)
     str_r(0, 1)
     lda bios.device
     sta bios.save_device
@@ -1978,6 +1966,7 @@ work_name:
 work_pprint:
     .fill $80,0
 
+.print "work_buffer=$"+toHexString(work_buffer)
 .print "work_path=$"+toHexString(work_path)
 .print "work_path.path=$"+toHexString(work_path.path)
 .print "work_path.filename=$"+toHexString(work_path.filename)

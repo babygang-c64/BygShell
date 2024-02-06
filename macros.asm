@@ -34,6 +34,15 @@
 .label zr7 = zr6+2
 .label zr7l = zr7
 .label zr7h = zr7+1
+
+.label zsrc=zr6
+.label zdest=zr7
+.label reg_zsrc=6
+.label reg_zdest=7
+
+.print "zsrc=$"+toHexString(zsrc)
+.print "zdest=$"+toHexString(zdest)
+
 .label ztmp = $b0
 .label zsave = $b2
 

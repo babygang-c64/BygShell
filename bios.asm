@@ -26,7 +26,7 @@
 .label file_load=10
 .label set_device=11
 .label add_str=12
-.label copy_str=13
+.label str_copy=13
 .label list_rm=14
 .label list_print=15
 .label list_size=16
@@ -45,7 +45,7 @@
 .label set_device_from_path=29
 .label read_buffer=30
 .label write_buffer=31
-.label eval_str=32
+.label str_expand=32
 .label filter=33
 .label print_path=34
 
@@ -63,7 +63,7 @@ bios_jmp:
     .word do_file_load
     .word do_set_device
     .word do_add_str
-    .word do_copy_str
+    .word do_str_copy
     .word do_list_rm
     .word do_list_print
     .word do_list_size
@@ -82,7 +82,7 @@ bios_jmp:
     .word do_set_device_from_path
     .word do_read_buffer
     .word do_write_buffer
-    .word do_eval_str
+    .word do_str_expand
     .word do_filter
     .word do_print_path
 
@@ -626,6 +626,53 @@ lgr_ajout:
 }
 
 //---------------------------------------------------------------
+// str_cat : zdest += zsrc
+//---------------------------------------------------------------
+
+do_str_cat:
+{
+    // pos_new = écriture = lgr + 1
+    ldy #0    
+    lda (zdest),y
+    tay
+    iny
+    sty pos_new
+
+    // pos_copie = lecture = 1
+    // lgr_ajout = nb de caractères à copier
+    ldy #0
+    lda (zsrc),y
+    sta lgr_ajout
+    iny
+    sty pos_copie
+
+copie:
+    ldy pos_copie
+    lda (zsrc),y
+    ldy pos_new
+    sta (zdest),y
+    inc pos_new
+    inc pos_copie
+    dec lgr_ajout
+    bne copie
+
+    // mise à jour longueur = position écriture suivante - 1
+    dec pos_new
+    lda pos_new
+    ldy #0
+    sta (zdest),y
+    clc
+    rts
+
+pos_copie:
+    .byte 0
+pos_new:
+    .byte 0
+lgr_ajout:
+    .byte 0
+}
+
+//---------------------------------------------------------------
 // file_load : charge un fichier et execute code en $080d
 // r0 = nom fichier A = présence séparateur
 //---------------------------------------------------------------
@@ -644,7 +691,7 @@ do_file_load:
     stw_r(1, work_buffer)
     // 0 : dest = work buffer, 1 = path, 2 = filename
 
-    jsr bios.do_copy_str
+    jsr bios.do_str_copy
 
     stw_r(0, work_buffer)
     str_r(1, 2)
@@ -956,7 +1003,7 @@ do_list_add:
     str_r(0, 1)
     str_r(1, 3)
     str_r(4, 1)
-    jsr do_copy_str
+    jsr do_str_copy
     tay
     pop_r(0)
     tya
@@ -1474,11 +1521,11 @@ nb_copie:
 }
 
 //---------------------------------------------------------------
-// eval_str : expanse une pstring
+// str_expand : expanse une pstring
 // entrée : R0, sortie : R1
 //---------------------------------------------------------------
 
-do_eval_str:
+do_str_expand:
 {
     ldy #0
     tya
@@ -1679,7 +1726,7 @@ do_pprint:
     tya
     pha
     stw_r(1, work_pprint)
-    jsr do_eval_str
+    jsr do_str_expand
     lda work_pprint
     beq est_vide
     ldy #0
@@ -1814,7 +1861,7 @@ creation:
     // copie nom variable
     stw_r(1, ptr_last_variable)
     ldself_r(1)
-    jsr do_copy_str
+    jsr do_str_copy
     add8(ptr_last_variable)
     stw_r(3, ptr_last_variable)
 
@@ -1824,7 +1871,7 @@ creation:
     stw_r(1, ptr_last_value)
     ldself_r(1)
     str_r(4, 1)
-    jsr do_copy_str
+    jsr do_str_copy
     add8(ptr_last_value)
 
     // ecriture adresse valeur à la suite du nom
@@ -2087,11 +2134,11 @@ comp_ko:
 }
 
 //---------------------------------------------------------------
-// copy_str : copie pstring en r0 vers destination en r1
+// str_copy : copie pstring en r0 vers destination en r1
 // en sortie A = longueur + 1 = longueur copiée
 //---------------------------------------------------------------
 
-do_copy_str:
+do_str_copy:
 {
     ldy #0
     lda (zr0),y
@@ -2139,20 +2186,101 @@ msg_path:
 }
 
 //---------------------------------------------------------------
-// prep_path2 : prépare un objet path
-// entrée : r0 = chaine à traiter, r1 = destination ppath
-// c=0 mode normal, c=1 force path seulement (pour CD)
-// format en entrée :
-//
-// [device:][partition][/path/][file]
+// str_chr : recherche A dans pstring R0, C=1 si trouvé et
+// Y = position
 //---------------------------------------------------------------
 
-do_prep_path2:
+do_str_chr:
 {
-    lda #0
-    rol
-    sta mode_path
+    sta ztmp
+    ldy #0
+    lda (zr0),y
+    beq pas_trouve
+    sta longueur
+    iny
+    lda ztmp
+recherche:
+    cmp (zr0),y
+    beq trouve
+    iny
+    dec longueur
+    bne recherche
+pas_trouve:
+    clc
+    rts
+trouve:
+    sec
+    rts
+longueur:
+    .byte 0
+}
 
+//---------------------------------------------------------------
+// str_rchr : recherche A dans pstring R0, C=1 si trouvé et
+// Y = position (recherche inverse)
+//---------------------------------------------------------------
+
+do_str_rchr:
+{
+    sta ztmp
+    ldy #0
+    lda (zr0),y
+    beq pas_trouve
+    tay
+    lda ztmp
+recherche:
+    cmp (zr0),y
+    beq trouve
+    dey
+    bne recherche
+pas_trouve:
+    clc
+    rts
+trouve:
+    sec
+    rts
+}
+
+
+//---------------------------------------------------------------
+// str_ncpy : copie X caractères à partir de zsrc vers une
+// nouvelle chaine pstring zdest
+//---------------------------------------------------------------
+
+do_str_ncpy:
+{
+    ldy #0
+    stx lgr_copie
+    push_r(reg_zdest)
+    lda #0
+    setbyte_r(reg_zdest)
+copie_nom:
+    getbyte_r(reg_zsrc)
+    setbyte_r(reg_zdest)
+    dex
+    bne copie_nom
+    pop_r(reg_zdest)
+    lda lgr_copie
+    setbyte_r(reg_zdest)
+    dec_r(reg_zdest)
+    clc
+    rts
+lgr_copie:
+    .byte 0
+}
+
+//---------------------------------------------------------------
+// prep_path : prépare un objet path
+//
+// entrée : r0 = chaine à traiter, r1 = destination ppath
+//
+// format en entrée :
+// [device[,partition]]:][path/][file]
+//---------------------------------------------------------------
+
+do_prep_path:
+{
+    // sauvegarde r0, raz ppath
     push_r(0)
     ldy #4
     lda #0
@@ -2160,82 +2288,96 @@ raz_path:
     sta (zr1),y
     dey
     bpl raz_path
+
+    // lecture longueur en entrée, si 0 = exit
     tay
-    getbyte_r(0)
+    lda (zr0),y
     sta lgr_entree
     bne process_entree
+
 fin_prep_path:
     pop_r(0)
     clc
     rts
 
+    // traitement entrée, si 1er caractère est un digit
+    // alors extract_device_partition
+
 process_entree:
-    getbyte_r(0)
-    dec lgr_entree
-    jsr is_digit
-    bcc pas_device_partition
     jsr extract_device_partition
     bcs syntax_error
-    dec_r(0)
+    sty suite_lecture
     jsr convert_device_partition
-pas_device_partition:
-    push_r(1)
     jsr extract_path_name
-    pop_r(1)
-    jsr update_path_type
+    //jsr update_path_type
     jmp fin_prep_path
 
+suite_lecture:
+    .byte 0
+
 syntax_error:
-    lda #2
-    sta $d021
+    pop_r(0)
+    call_bios(bios.error, msg_error.invalid_parameters)
     sec
     rts
 
     // extraction device/partition, forme
-    // [device:][partition]
+    // [device[,partition]]:]
     // max 2 digits et 3 digits
+    // en sortie str_device / str_partition à jour
+    // et Y=suite lecture
+    // C=0 si OK, C=1 si erreur
 
 extract_device_partition:
+    // raz device et partition
+    ldy #0
     sty str_device
     sty str_partition
-    iny
-extr_device:
-    ldy str_device
-    cpy #2
-    beq syntax_error
-    iny
-    sta str_device,y
-    inc str_device
-    ldy #0
-    getbyte_r(0)
-    dec lgr_entree
-    cmp #':'
-    beq fin_device
-    cmp #'/'
-    beq fin_device_partition_only
-    bne extr_device
 
-fin_device:
-    getbyte_r(0)
-    dec lgr_entree
-    jsr is_digit
-    bcc fin_device_only
-extr_partition:
-    ldy str_partition
-    cpy #3
-    beq syntax_error
+    // recherche présence ":"
+    lda #':'
+    jsr do_str_chr
+    bcs presence_device_partition
+    ldy #1
+    clc
+    rts
+
+presence_device_partition:
+    ldy #1
+    ldx #1
+copie_device:
+    lda (zr0),y
     iny
-    sta str_partition,y
+    cmp #':'
+    beq fin_device_partition
+    cmp #','
+    beq test_partition
+    sta str_device,x
+    inx
+    inc str_device
+    cpx #4
+    bne copie_device
+    beq fin_erreur_partition
+
+test_partition:
+    ldx #1
+copie_partition:
+    lda (zr0),y
+    iny
+    cmp #':'
+    beq fin_device_partition
+    sta str_partition,x
+    inx
     inc str_partition
-    ldy #0
-    getbyte_r(0)
-    dec lgr_entree
-    jsr is_digit
-    bcs extr_partition
+    cpx #5
+    bne copie_partition
+
+fin_erreur_partition:
+    sec
     rts
-fin_device_only:
-    rts
-fin_device_partition_only:
+    
+fin_device_partition:
+    clc
     rts
 
 str_device:
@@ -2291,144 +2433,81 @@ pas_int_device:
     // sinon path[dernier/]fichier
 
 extract_path_name:
-    cmp #':'
-    bne pas_sep_device
-    getbyte_r(0)
-    dec lgr_entree
-pas_sep_device:
-    sta lu
-    ldy mode_path
-    beq pas_do_mode_path
-    jmp do_mode_path
-pas_do_mode_path:
-    // dernier caractère = / => comme mode_path
-    push_r(0)
-    lda lgr_entree
-    add_r(0)
-    getbyte_r(0)
-    cmp #'/'
-    bne pas_path_only
-    jmp path_only
-pas_path_only:
-    pop_r(0)
 
-    // sinon parcours et découpe sur dernier / ou si :, 
-    // sauf // au début ? -> pas testé
-    // recherche en partant de la fin
+    lda #'/'
+    jsr do_str_rchr
+    bcs do_cut
 
-    ldy lgr_entree
-cherche_nom:
-    lda (zr0),y
-    cmp #':'
-    beq nom_trouve
-    cmp #'/'
-    beq nom_trouve
-    dey
-    bne cherche_nom
+    // pas de découpage, nom seul, recopie dans partie nom
+    
+    str_r(reg_zsrc, 0)
+    lda suite_lecture
+    add_r(reg_zsrc)
+    str_r(5, 1)
+    lda #4
+    add_r(5)
+    str_r(reg_zdest, 5)
 
-nom_pas_trouve:
-    // pas de séparateur = nom seul
-    push_r(0)
-    jmp name_only
-
-    // ici r0 = début du path, r1 = destination
-    // Y = nb de caractères - 1 de la partie path
-    // lgr_entrée = lgr chaine restante path + nom - 1
-
-nom_trouve:
-    // copie la partie path, vers R1+4
-    // conserve longueur nom = lgr entrée - y
-    iny
-    tya
-    tax
-    sta lgr_path
     sec
     lda lgr_entree
-    sbc lgr_path
-    sta lgr_nom
-    //inx
-    // stocke la longueur
-    ldy #0
-    // et copie le path
-    lda #3
-    add_r(1)
-    lda lgr_path
-    setbyte_r(1)
-copie_partie_path:
-    getbyte_r(0)
-    setbyte_r(1)
-    dex
-    bne copie_partie_path
-
-    // ici R1 = position écriture filename
-    // r0 = prochaine lecture = 1er caractère nom
-    
-    // écriture longueur nom
-    lda lgr_nom
+    sbc suite_lecture
     tax
     inx
-    txa
-    setbyte_r(1)
-copie_partie_nom:
-    getbyte_r(0)
-    setbyte_r(1)
-    dex
-    bne copie_partie_nom
+    jsr do_str_ncpy
+    jmp fin_extract_path_name
 
-    clc
-    rts
+    // découpage path / nom, Y = position de départ
+    // path = début suite_lecture, lgr = Y
+do_cut:
 
-name_only:
-    lda #PPATH.WITH_NAME
-    sta update_path_name
-    // mode path, toute la chaine en entrée = path
-path_only:
-    pop_r(0)
+    tya
+    tax
+    stx lgr_copie
 
-do_mode_path:
-    // mode path : on recopie tout dans le path
-    // cible = r1 + 4
-    push_r(1)
-    ldy #0
+    // copie partie path
+    str_r(reg_zsrc, 0)
+    lda suite_lecture
+    add_r(reg_zsrc)
+    str_r(5, 1)
     lda #3
-    add_r(1)
-    push_r(1)
-    inc_r(1)
-    tya
-    sty lgr_path
-    lda lu
-copie_path:
-    getbyte_r(0)
-    setbyte_r(1)
-    inc lgr_path
-    dec lgr_entree
-    bpl copie_path
-    pop_r(1)
-    // écriture longueur + longueur 0 pour nom
-    // de fichier (non présent)
-    lda lgr_path
-    ldy #0
-    setbyte_r(1)
-    add_r(1)
-    inc_r(1)
-    tya
-    setbyte_r(1)
+    add_r(5)
+    str_r(reg_zdest, 5)
 
-    // update type |= WITH_PATH sauf si lgr path = 0
-    pop_r(1)
-    ldy #3
-    lda (zr1),y
-    beq path_vide
+    sec
+    lda lgr_copie
+    sbc suite_lecture
+    tax
+    inx
+    jsr do_str_ncpy
+
+    // destination 
     ldy #0
-    lda (zr1),y
-    ora update_path_name:#PPATH.WITH_PATH
-    sta (zr1),y
-    lda PPATH.WITH_PATH
-    sta update_path_name
-path_vide:
+    str_r(5, 1)
+    lda #3
+    add_r(5)
     ldy #0
+    lda (zr5),y
+    add_r(5)
+    inc_r(5)
+    str_r(reg_zdest, 5)
+    // source = OK
+    // longueur = total - lgr_copie
+    ldy #0
+    lda (zr0),y
+    sec
+    sbc lgr_copie
+    tax
+    jsr do_str_ncpy
+
+    jmp fin_extract_path_name
+    
+
+fin_extract_path_name:
     clc
     rts
+
+lgr_copie:
+    .byte 0
 
     // mise à jour type path avec présence path / filename
 
@@ -2486,259 +2565,6 @@ is_digit:
 not_digit:
     clc
     rts
-}
-
-//---------------------------------------------------------------
-// prep_path : prépare un objet path
-// 
-// entrée : r0 = pstring path, r1 = destination stockage path
-// sortie : objet path à jour
-//
-// objet path:
-// - byte = device ou 0
-// - byte = partition ou 0 (non géré pour l'instant)
-// - pstring reste du path
-// - pstring nom de fichier
-// 
-// format du path :
-// [<device>:][[<partition>][/ ou //<path>/]][:<filename>]
-// partition = 0 si pas de partition = partition courante
-// device = 0 si pas de device indiqué = device courant
-// work_path = partie chemin + nom de fichier
-//---------------------------------------------------------------
-
-do_prep_path:
-{
-    // cas : 
-    // - chaine vide
-    // - extraction device
-    // - extraction partition
-    // - extraction path
-    // - extraction filename
-
-    // raz destination
-    ldy #0
-    sty type_path
-    tya
-    tax
-
-raz_path:
-    sta (zr1),y
-    iny
-    cpy #5
-    bne raz_path
-
-    // lecture longueur chaine, sortie si vide
-    ldy #0
-    lda (zr0),y
-    beq erreur_chaine_vide
-    sta lgr_max
-    iny
-
-    // recherche device
-    jsr get_path_device
-    bcs pas_numero_device
-    
-    tya
-    pha
-    lda #1
-    sta type_path
-    push_r(0)
-    push_r(1)
-    stw_r(0, buffer_numero)
-    jsr bios.do_str2int
-    tax
-    pop_r(1)
-    pop_r(0)
-    ldy #1
-    txa
-    sta (zr1),y
-    pla
-    tay
-
-    // si fini, wrap up
-
-    dey
-    cpy lgr_max
-    beq fin_ok_prep_path
-    iny
-
-pas_numero_device:
-
-    // recherche path ou nom de fichier
-    jsr get_path_filename
-    bcc pas_separation_path_filename
-
-    // séparation 
-
-    lda type_path
-    ora #8+4
-    sta type_path
-    jmp fin_ok_prep_path
-
-    // fin KO
-erreur_chaine_vide:
-    sec
-    rts
-
-
-    // pas de séparation, copie juste filename
-pas_separation_path_filename:
-    
-    sta lgr_max
-
-    clc
-    tya
-    sta ztmp
-    add_r(0)
-
-    // ajuste la destination, utilise r2 pour
-    // la copie et conserver r1
-
-    str_r(2,1)
-    clc
-    lda #3
-    add_r(2)
-    inc_r(2)
-    ldx #0
-    ldy #0
-copie_nom:
-    getbyte_r(0)
-    setbyte_r(2)
-    inx
-    dec lgr_max
-    bpl copie_nom
-
-    // écriture lgr copiée dans r1+3
-    dex
-    txa
-    ldy #3
-    sta (zr1),y
-
-    // update type path = nom seul
-    // et enregistre dans le path
-    lda type_path
-    ora #4
-    sta type_path
-
-fin_ok_prep_path:
-    ldy #0
-    lda type_path
-    sta (zr1),y
-    clc
-    rts
-
-
-    //------------------------------------------------------
-    // get_path_filename : recherche path / nom de fichier
-    // parcours la chaine jusqu'à la fin, si présence
-    // caractère : = il y a un path et le nom de fichier
-    // se trouve après :, sinon on a juste un nom de fichier
-    // retour : C = 0 si pas de path, X = 0
-    // C = 1 si path, X = début nom de fichier
-    // en retour A = nb de caractères total à copier
-    //------------------------------------------------------
-
-get_path_filename:
-    tya
-    pha
-    ldx #0
-    stx nb_a_copier
-    inc lgr_max
-
-boucle_path_filename:
-    lda (zr0),y
-    inc nb_a_copier
-    cmp #':'
-    bne pas_fichier
-    tya
-    tax
-    inx
-
-boucle_fin_chaine:
-    cpy lgr_max
-    beq fin_chaine
-    inc nb_a_copier
-    iny
-    bne boucle_fin_chaine
-
-fin_chaine:
-    pla
-    tay
-    dec lgr_max
-    sec
-    rts
-
-pas_fichier:
-    iny
-    cpy lgr_max
-    bne boucle_path_filename
-    pla
-    tay
-    lda nb_a_copier
-    dec lgr_max
-    clc
-    rts
-
-nb_a_copier:
-    .byte 0
-
-    //------------------------------------------------------
-    // get_path_device : récupère un numéro si existant
-    // format numéro <99>: -> 2 digits max, fin par :
-    // retour numéro dans buffer_numero, C=0, 
-    // Y = caractère suivant
-    // si pas numero, C = 1, Y = position de départ
-    //------------------------------------------------------
-
-get_path_device:
-    tya
-    pha
-    ldx #0
-    stx buffer_numero
-boucle_path_device:
-    lda (zr0),y
-    cmp #':'
-    beq fin_path_device
-    cmp #'/'
-    beq erreur_path_device
-    cmp #'0'
-    bcc erreur_path_device
-    cmp #$3a
-    bpl erreur_path_device
-    // digit ok
-    sta buffer_numero+1,x
-    iny
-    cpy lgr_max
-    beq fin_path_device_lgr
-    inx
-    cpx #3
-    bne boucle_path_device
-erreur_path_device:
-    pla
-    tay
-    sec
-    rts
-fin_path_device_lgr:
-    inx
-fin_path_device:
-    iny
-    pla
-    //tay //tmp
-    stx buffer_numero
-    clc
-    rts
-
-type_path:
-    .byte 0
-lgr_max:
-    .byte 0
-pos_fin_num:
-    .byte 0
-buffer_numero:
-    .byte 0, 0, 0
-.print "buffer_numero=$"+toHexString(buffer_numero)
-.print "***lgr_max=$"+toHexString(lgr_max)
 }
 
 //---------------------------------------------------------------
@@ -3383,30 +3209,36 @@ canal:
 
 do_build_path:
 {
+    // positionne source sur la 1ère chaine du ppath
+    str_r(reg_zsrc, 1)
+    lda #3
+    add_r(reg_zsrc)
+    
+    str_r(reg_zdest, 0)
+    // raz dest
     ldy #0
     tya
-    sta (zr0),y
-    lda (zr1),y
-    and #PPATH.WITH_PATH
-    beq pas_path
-    push_r(1)
-    lda #3
-    add_r(1)
-    bios(bios.add_str)
-    pop_r(1)
-pas_path:
-    ldy #0
-    lda (zr1),y
-    and #PPATH.WITH_NAME
-    beq pas_name
+    sta (zdest),y
 
-    lda #3
-    add_r(1)
+    // ajoute 1ère chaine du path (path ou nom seul)
+    jsr do_str_cat
+
+    // est-ce qu'il y a 2 chaines ?
     ldy #0
     lda (zr1),y
-    add_r(1)
-    bios(bios.add_str)
-pas_name:
+    and #PPATH.WITH_PATH+PPATH.WITH_NAME
+    cmp #PPATH.WITH_PATH
+    beq un_seul
+    cmp #PPATH.WITH_NAME
+    beq un_seul
+
+    // oui, ajoute la 2ème chaine
+    str_r(reg_zsrc, 1)
+    lda (zsrc),y
+    add_r(reg_zsrc)
+    add_r(3)
+    jsr do_str_cat
+un_seul:
     clc
     rts
 }

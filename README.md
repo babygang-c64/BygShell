@@ -30,10 +30,10 @@ related BIOS operations :
 
 **add_str** : pstring(r0) += pstring(r1)
 
-**copy_str** : pstring(r1) = pstring(r0)
+**str_copy** : pstring(r1) = pstring(r0)
     return A = total copied bytes (R0 pstring length + 1)
 
-**eval_str** : pstring(r1) = expansed pstring(r0)
+**str_expand** : pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
 
         %% = %
