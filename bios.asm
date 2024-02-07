@@ -48,6 +48,7 @@
 .label str_expand=32
 .label filter=33
 .label print_path=34
+.label str_cmp=35
 
 bios_jmp:
     .word do_reset
@@ -85,6 +86,7 @@ bios_jmp:
     .word do_str_expand
     .word do_filter
     .word do_print_path
+    .word do_str_cmp
 
 * = * "BIOS code"
 
@@ -2140,7 +2142,7 @@ check_name:
     lda (zr1),y
     sta lgr_varname
 
-    jsr compare_str
+    jsr do_str_cmp
     bcs var_existe
 
     clc
@@ -2180,10 +2182,10 @@ nb_var_work:
     .byte 0
 
 //---------------------------------------------------------------
-// compare_str : compare 2 pstrings, r0 vs r1, C=1 si OK
+// str_cmp : compare 2 pstrings, r0 vs r1, C=1 si OK
 //---------------------------------------------------------------
 
-compare_str:
+do_str_cmp:
 {
     // si pas même longueur = KO
     ldy #0

@@ -40,6 +40,7 @@ related BIOS operations :
         %R<n> = hex value of register R<n>
         %P<n> = pstring value at address of register R<n>
         %V<variable>% = pstring value stored for system variable with name <variable>
+        %C<hexcolor> = insert character to change color to <hexcolor> (hex nibble)
     
     On exit : C=1 if error, C=0 if OK
 

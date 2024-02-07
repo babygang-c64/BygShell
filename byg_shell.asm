@@ -944,12 +944,23 @@ cmd_cd:
     needs_parameters(1)
     ldx #1
     call_bios(bios.list_get, parameters.list)
+    stw_r(1, parent)
+    bios(bios.str_cmp)
+    bcc not_parent
+    stw_r(0, oparent)
+not_parent:
     stw_r(1, commande)
     clc
     jmp cmd_do_cmd
 
 commande:
     pstring("CD")
+parent:
+    pstring("..")
+oparent:
+    .byte 1
+    .byte 95
+
 }
 
 //----------------------------------------------------
@@ -1316,7 +1327,7 @@ msg_taille:
 .print "dir_entry=$"+toHexString(dir_entry)
 
 //----------------------------------------------------
-// toplevel test
+// toplevel
 //----------------------------------------------------
 
 * = * "toplevel"
@@ -1357,7 +1368,7 @@ add_history:
     lda (zr0),y
     beq pas_copie_history
     stw_r(1, history_kw)
-    jsr bios.compare_str
+    bios(bios.str_cmp)
     bcs pas_copie_history
 
     str_r(1, 0)
