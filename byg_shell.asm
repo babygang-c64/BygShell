@@ -703,7 +703,9 @@ num_lignes:
 
 cmd_do_cmd:
 {
-
+    lda #0
+    rol
+    sta avec_sep
     // analyse du path en R0, retour = work_path
     push_r(1)
     stw_r(1, work_path)
@@ -731,7 +733,8 @@ pas_erreur_device:
 pas_de_device:
     // construction du path cible dans work_buffer
     stw_r(1, work_path)
-    clc
+    lda avec_sep
+    ror
     call_bios(bios.build_path, work_buffer)
     //call_bios(bios.print_path, work_path)
     //call_bios(bios.pprintnl, work_buffer)
@@ -777,7 +780,8 @@ error:
     rts
 erreur:
     pstring("ERREUR")
-
+avec_sep:
+    .byte 0
 }
 
 //---------------------------------------------------------------
@@ -888,6 +892,7 @@ cmd_mkdir:
     ldx #1
     call_bios(bios.list_get, parameters.list)
     stw_r(1, commande)
+    clc
     jmp cmd_do_cmd
 
 commande:
@@ -904,6 +909,7 @@ cmd_rmdir:
     ldx #1
     call_bios(bios.list_get, parameters.list)
     stw_r(1, commande)
+    clc
     jmp cmd_do_cmd
 
 commande:
@@ -922,6 +928,7 @@ cmd_rm:
 
 do_rm:
     stw_r(1, commande)
+    clc
     jmp cmd_do_cmd
 
 commande:
@@ -938,6 +945,7 @@ cmd_cd:
     ldx #1
     call_bios(bios.list_get, parameters.list)
     stw_r(1, commande)
+    clc
     jmp cmd_do_cmd
 
 commande:
