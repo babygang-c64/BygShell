@@ -526,18 +526,44 @@ pasAF:
     rts
 }
 
-//---------------------------------------------------------------
-// set_device : sélectionne device en fonction de la valeur dans
-// la variable DEVICE
-//---------------------------------------------------------------
+//----------------------------------------------------
+// set_device_from_path : r0 = ppath
+//----------------------------------------------------
 
+do_set_device_from_path:
+{
+    // sauve le device courant
+    ldx bios.device
+    stx bios.save_device
 
+    // lecture type ppath pour voir si device indiqué
+    ldy #0
+    lda (zr0),y
+    and #PPATH.WITH_DEVICE
+    beq pas_device_1
+
+    // si indiqué, lecture int device et update
+    iny
+    lda (zr0),y
+    dey
+    tax
+
+    // sinon récup device courant sauvegardé
+pas_device_1:
+    jmp do_set_device_from_int
+}
+
+//---------------------------------------------------------------
+// set_device_from_int : sélectionne device avec la valeur
 // en entrée device dans X
+//---------------------------------------------------------------
 
 do_set_device_from_int:
 {
     push_r(0)
+    // conversion int en str
     stx zr0l
+    stx device_tmp
     lda #0
     sta zr0h
     stw_r(1, int_conv)
@@ -545,11 +571,21 @@ do_set_device_from_int:
     stw_r(0, int_conv)
     jsr do_lstrip
     .print "int_conv=$"+toHexString(int_conv)
+
+    // remplace la variable DEVICE
     str_r(1, 0)
     call_bios(setvar, do_set_device.text_device)
     pop_r(0)
-    rts
+    lda device_tmp
+    jmp do_set_device.set_device
+device_tmp:
+    .byte 0
 }
+
+//---------------------------------------------------------------
+// set_device : sélectionne device en fonction de la valeur dans
+// la variable DEVICE
+//---------------------------------------------------------------
 
 do_set_device:
 {
@@ -559,9 +595,11 @@ do_set_device:
     jsr do_str2int
     // si pas int, no device
     bcs no_device
+
+set_device:
     tay
     lda devices,y
-    // si pas dans la liste des devices OK = no device
+    // si pas dans la liste des devices OK = device not present
     beq no_device
 
     tya
@@ -571,6 +609,7 @@ do_set_device:
 
 no_device:
     call_bios(error, msg_error.device_not_present)
+    sec
     rts
 
 text_device:
@@ -3019,27 +3058,6 @@ lgr_chaine:
 }
 
 //----------------------------------------------------
-// set_device_from_path : r0 = ppath
-//----------------------------------------------------
-
-do_set_device_from_path:
-{
-    ldx bios.device
-    ldy #0
-    lda (zr0),y
-    and #PPATH.WITH_DEVICE
-    beq pas_device_1
-    iny
-    lda (zr0),y
-    dey
-    tax
-    jmp do_set_device_from_int
-pas_device_1:
-    ldx bios.save_device
-    jmp do_set_device_from_int
-}
-
-//----------------------------------------------------
 // write_buffer : ecriture bufferisée
 // entrée : R0 = buffer d'écriture, pstring
 // X = id fichier
@@ -3131,8 +3149,8 @@ nb_lu:
 // le fichier est ouvert en X,<device>,X
 //----------------------------------------------------
 
-msg_nom:
-    pstring("NOM=[%P5]")
+//msg_nom:
+//    pstring("NOM=[%P5]")
 do_file_open:
 {
     lda #0
@@ -3140,8 +3158,8 @@ do_file_open:
     sta read_write
     stx canal
     push_r(0)
-    str_r(5, 0)
-    call_bios(bios.pprintnl, msg_nom)
+    //str_r(5, 0)
+    //call_bios(bios.pprintnl, msg_nom)
     // ensure current device
     jsr bios.do_set_device
     pop_r(0)

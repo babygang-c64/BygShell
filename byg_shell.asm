@@ -592,9 +592,8 @@ do_cat:
     call_bios(bios.set_device_from_path, work_path)
     stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
-    call_bios(bios.print_path, work_path)
-    call_bios(bios.pprintnl, work_buffer)
     stw_r(0, work_buffer)
+
     // ouverture en lecture, nom dans r0
     ldx #2
     clc
