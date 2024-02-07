@@ -721,8 +721,8 @@ pas_de_device:
     // construction du path cible dans work_buffer
     stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
-    call_bios(bios.print_path, work_path)
-    call_bios(bios.pprintnl, work_buffer)
+    //call_bios(bios.print_path, work_path)
+    //call_bios(bios.pprintnl, work_buffer)
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
@@ -735,7 +735,7 @@ pas_de_device:
     stw_r(reg_zsrc, work_buffer)
     jsr bios.do_str_cat
 
-    call_bios(bios.pprintnl, work_buffer2)
+    //call_bios(bios.pprintnl, work_buffer2)
 
     lda work_buffer2
     ldx #<work_buffer2+1
@@ -879,7 +879,7 @@ cmd_mkdir:
     jmp cmd_do_cmd
 
 commande:
-    pstring("MD:")
+    pstring("MD")
 }
 
 //----------------------------------------------------
@@ -895,7 +895,7 @@ cmd_rmdir:
     jmp cmd_do_cmd
 
 commande:
-    pstring("RD:")
+    pstring("RD")
 }
 
 //----------------------------------------------------
@@ -913,7 +913,7 @@ do_rm:
     jmp cmd_do_cmd
 
 commande:
-    pstring("S:")
+    pstring("S")
 }
 
 //----------------------------------------------------
@@ -1935,9 +1935,9 @@ prompt_value:
 path_value:
     pstring("//PATH/")
 device_value:
-    pstring("10")
+    pstring("9")
 config_value:
-    pstring("10:CONFIG/")
+    pstring("9://CONFIG/")
 
 values_end:
 
