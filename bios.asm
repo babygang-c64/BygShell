@@ -1704,12 +1704,15 @@ do_copy_var:
     ldy #0
     getbyte_r(2)
     sta lgr_copie
+    cmp #0
+    beq pas_copie_var
 copie_var:
     getbyte_r(2)
     setbyte_r(1)
     inc lgr_output
     dec lgr_copie
     bne copie_var
+pas_copie_var:
     jmp process_suite
 
 pas_variable:
@@ -1729,6 +1732,7 @@ pas_variable:
     sta zr2l
     lda zr0h,y
     sta zr2h
+
     jmp do_copy_var
 
 pas_pstring:
@@ -2245,6 +2249,7 @@ do_print_path:
     add_r(0)
     // name
     str_r(6, 0)
+
     call_bios(bios.pprintnl, msg_path)
     pop_r(0)
     rts
@@ -3250,11 +3255,16 @@ canal:
 // build_path : construction path cible
 // entrée : r0 = adresse pstring résultat
 // r1 = ppath source
+// si C=0 ajout :, si C=1 pas d'ajout
 // sortie = r0 à jour = path:nom
 //----------------------------------------------------
 
 do_build_path:
 {
+    lda #0
+    rol
+    sta pas_ajout
+
     // raz dest
     str_r(reg_zdest, 0)
     ldy #0
@@ -3279,8 +3289,12 @@ pas_path:
     and #PPATH.WITH_NAME
     beq pas_name
 
+    lda pas_ajout
+    bne pas_ajout_sep
+
     stw_r(reg_zsrc, msg_sep)
     jsr do_str_cat
+pas_ajout_sep:
 
     str_r(reg_zsrc, 1)
     lda #3
@@ -3294,6 +3308,9 @@ pas_path:
 pas_name:
     clc
     rts
+
+pas_ajout:
+    .byte 0
 msg_sep:
     pstring(":")
 }

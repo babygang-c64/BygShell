@@ -379,19 +379,29 @@ cmd_cp:
     call_bios(bios.list_get, parameters.list)
     stw_r(1, work_path)
     bios(bios.prep_path)
+    //call_bios(bios.print_path, work_path)
+
     ldx #2
     call_bios(bios.list_get, parameters.list)
     stw_r(1, work_path2)
     bios(bios.prep_path)
+    //call_bios(bios.print_path, work_path2)
 
+    // path source sans séparateur path<:>nom
+    sec
     stw_r(1, work_path)
     call_bios(bios.build_path, work_buffer)
+    //call_bios(bios.pprintnl, work_buffer)
 
+    // path destination sans séparateur path<:>nom
+    sec
     stw_r(1, work_path2)
     call_bios(bios.build_path, work_buffer2)
+
     stw_r(0, work_buffer2)
     stw_r(1, write_str)
     bios(bios.add_str)
+    //call_bios(bios.pprintnl, work_buffer2)
 
     // open fichier en sortie
     
@@ -591,6 +601,7 @@ do_cat:
     stw_r(1, work_path)
     call_bios(bios.set_device_from_path, work_path)
     stw_r(1, work_path)
+    clc
     call_bios(bios.build_path, work_buffer)
     stw_r(0, work_buffer)
 
@@ -720,6 +731,7 @@ pas_erreur_device:
 pas_de_device:
     // construction du path cible dans work_buffer
     stw_r(1, work_path)
+    clc
     call_bios(bios.build_path, work_buffer)
     //call_bios(bios.print_path, work_path)
     //call_bios(bios.pprintnl, work_buffer)
@@ -1070,19 +1082,7 @@ pas_blocs:
     and #FT_SIZE
     beq pas_ft_size
 
-    // type fichier
-    lda (dir_entry.type)+1
-    cmp #'D'
-    bne pas_dir
-    lda #13
-    sta 646
-pas_dir:
-    cmp #'*'
-    bne pas_ouvert
-    lda #2
-    sta 646
-pas_ouvert:
-
+    jsr set_dir_color
     //BRK//*
     stw_r(1, dir_entry.filename)
     //call_bios(bios.filter, filtre)
@@ -1128,8 +1128,7 @@ do_next:
     beq error      // no RUN/STOP -> continue
     jmp next
 error:
-    // A contains BASIC error code
-
+    // A contains error code
     // most likely error:
     // A = $05 (DEVICE NOT PRESENT)
 exit:
@@ -1138,10 +1137,9 @@ exit:
     lda #13
     jsr CHROUT
 pas_impair:
-    lda #$02      // filenumber 2
-    jsr $FFC3     // call CLOSE
 
-    jsr $FFCC     // call CLRCHN
+    ldx #2
+    bios(bios.file_close)
     rts
 
     // print_name_no_size : affichage nom sans taille
@@ -1152,7 +1150,10 @@ print_name_no_size:
     //stw_r(1, dir_entry.filename)
     //call_bios(bios.filter, filtre)
     //bcs no_print2
+    jsr set_dir_color
     call_bios(bios.pprint, dir_entry.filename)
+    lda #5
+    sta 646
 //no_print2:
 
     lda colonnes
@@ -1162,6 +1163,21 @@ print_name_no_size:
     sta colonnes
     lda #$0d
     jmp CHROUT
+
+set_dir_color:
+    // type fichier
+    lda (dir_entry.type)+1
+    cmp #'D'
+    bne pas_dir
+    lda #13
+    sta 646
+pas_dir:
+    cmp #'*'
+    bne pas_ouvert
+    lda #2
+    sta 646
+pas_ouvert:
+    rts
 
 dirname:
     pstring("$")     // filename used to access directory
@@ -1404,7 +1420,7 @@ msg_trouve:
 nb_history:
     .byte 0
 max_history:
-    .byte 5
+    .byte 10
 
 history_list:
     plist(history_data)
