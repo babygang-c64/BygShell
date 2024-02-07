@@ -1562,6 +1562,14 @@ nb_copie:
 //---------------------------------------------------------------
 // str_expand : expanse une pstring
 // entrée : R0, sortie : R1
+//
+// séquences expansées :
+//
+// %V<variable>% = valeur variable
+// %P<reg> = pstring à l'adresse du registre <reg>
+// %R<reg> = valeur hexa du registre <reg>
+// %% = %
+// %C<nibble> = couleur <nibble>
 //---------------------------------------------------------------
 
 do_str_expand:
@@ -1724,6 +1732,22 @@ pas_variable:
     jmp do_copy_var
 
 pas_pstring:
+    cmp #'C'
+    bne pas_couleur
+    jsr consomme_car
+
+    // C = couleur, insère le caractère de changement de couleur
+    // fonction du nibble hexa qui suit
+    //getbyte_r(0)
+     
+    jsr do_hex2int.conv_hex_nibble
+    clc
+    tay
+    lda code_couleur,y
+    ldy #0
+    jmp process_normal
+
+pas_couleur:
     clc
     rts
 
@@ -1738,6 +1762,10 @@ fin_erreur:
     pla
     sec
     rts
+
+code_couleur:
+    .byte 90,5,28,159,156,30,31,158
+    .byte 150,149,129,151,152,153,154,155
 * = * "longueurs"
 lgr_copie:
     .byte 0
