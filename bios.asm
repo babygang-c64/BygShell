@@ -49,6 +49,7 @@
 .label filter=33
 .label print_path=34
 .label str_cmp=35
+.label str_chr=36
 
 bios_jmp:
     .word do_reset
@@ -87,6 +88,7 @@ bios_jmp:
     .word do_filter
     .word do_print_path
     .word do_str_cmp
+    .word do_str_chr
 
 * = * "BIOS code"
 
@@ -2260,13 +2262,13 @@ msg_path:
 }
 
 //---------------------------------------------------------------
-// str_chr : recherche A dans pstring R0, C=1 si trouvé et
+// str_chr : recherche X dans pstring R0, C=1 si trouvé et
 // Y = position
 //---------------------------------------------------------------
 
 do_str_chr:
 {
-    sta ztmp
+    stx ztmp
     ldy #0
     lda (zr0),y
     beq pas_trouve
@@ -2409,7 +2411,7 @@ extract_device_partition:
     sty str_partition
 
     // recherche présence ":"
-    lda #':'
+    ldx #':'
     jsr do_str_chr
     bcs presence_device_partition
     ldy #1

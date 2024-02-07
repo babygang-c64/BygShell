@@ -1395,32 +1395,55 @@ toplevel:
     // ajout à l'historique
     jsr add_history
 
-    // découpage des paramètres
-    
+    // execute la commande
+    jsr command_process
+    jmp toplevel
+
+command_process:
+{
+    // découpage des paramètres    
     stw_r(0, input_buffer)
     jsr do_get_params
     //call_bios(bios.list_print, parameters.list)
 
     // pas de commande = boucle
     lda parameters.list
-    beq toplevel
+    bne non_vide
+    rts
 
+non_vide:
     ldx #0
     call_bios(bios.list_get, parameters.list)
     jsr bios.lookup_cmd
     bcc non_trouve
-    // exécute la commande
-    jsr command_execute
-    jmp toplevel
+
+    // exécute la commande si commande interne
+    jmp command_execute
 
     // commande non trouvée en interne, essaye en externe
 non_trouve:
-    jsr bios.do_file_load
 
-    //call_bios(bios.pprintnl, msg_non_trouve)
+    ldx #'.'
+    bios(bios.str_chr)
+    bcc is_binary
 
-    // et boucle sur le toplevel
-    jmp toplevel
+    iny
+    lda (zr0),y
+    cmp #'S'
+    bne pas_script
+    iny
+    lda (zr0),y
+    cmp #'H'
+    bne pas_script
+    rts
+
+pas_script:
+    call_bios(bios.error, msg_error.command_not_found)
+    rts
+
+is_binary:
+    jmp bios.do_file_load
+}
 
 command_execute:
 {
