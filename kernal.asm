@@ -29,6 +29,7 @@
 .label CLRCHN = $ffcc
 .label CHRIN  = $ffcf
 .label SAVE   = $ffd8
+.label STOP   = $ffe1
 .label CLALL  = $ffe7
 .label IECIN  = $ffa5
 .label UNTLK  = $FFAB
@@ -42,3 +43,6 @@
 .label CURSOR_ONOFF = 204
 .label CURSOR_STATUS = 207
 .label CURSOR_COLOR = 646
+.label KEYPRESS     = $cb   // $3c, $3f, $01, $07 = space, r/s, enter, cursor down
+
+

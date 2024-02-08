@@ -3073,7 +3073,8 @@ do_str_empty:
     sta lgr_chaine
     beq est_vide
 test_vide:
-    getbyte_r(0)
+    iny
+    lda (zr0),y
     cmp #32
     beq suite_test_vide
     cmp #9
@@ -3128,6 +3129,7 @@ pos_lecture:
 //----------------------------------------------------
 // read_buffer : lecture bufferisée
 // entrée : R0 = buffer de lecture (pstring)
+// C=0 lecture normale, C=1 arrêt si 0d ou 0a (ligne)
 // X = id fichier
 // sortie : buffer à jour
 // C=0 si pas fini, C=1 si EOF
@@ -3135,6 +3137,9 @@ pos_lecture:
 
 do_read_buffer:
 {
+    lda #0
+    rol
+    sta lecture_ligne
     jsr CHKIN
 
     lda #0
@@ -3145,18 +3150,29 @@ lecture:
     bne fin_lecture
     inc nb_lu
     jsr CHRIN
+    ldy lecture_ligne
+    beq pas_test
+    cmp #13
+    beq fin_ligne
+    cmp #10
+    beq fin_ligne
+pas_test:
     ldy nb_lu
     sta (zr0),y
     cpy #255
     beq fin_buffer
     bne lecture
+fin_ligne:
+    dec nb_lu
 fin_buffer:
     lda nb_lu
     ldy #0
     sta (zr0),y
     jsr CLRCHN
-    lda #'.'
-    jsr CHROUT
+//    lda #'.'
+//    jsr CHROUT
+    jsr READST
+    bne fin_lecture
     clc
     rts
 
@@ -3169,11 +3185,13 @@ pas_erreur:
     ldy #0
     sta (zr0),y
     jsr CLRCHN
-    lda #13
-    jsr CHROUT
+//    lda #13
+//    jsr CHROUT
     sec
     rts
 
+lecture_ligne:
+    .byte 0
 nb_lu:
     .byte 0
 }

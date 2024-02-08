@@ -423,6 +423,7 @@ cmd_cp:
 
 copie_fichier:
     ldx #2
+    clc
     call_bios(bios.read_buffer, work_buffer)
     lda #0
     rol
@@ -557,13 +558,26 @@ pos_cat:
 
 //----------------------------------------------------
 // cmd_cat : affichage fichier
+//
+// options : 
+// N = numérote toutes les lignes
+// E = affiche un $ en fin de ligne
+// B = numérote les lignes non vides
+// P = pagine la sortie
 //----------------------------------------------------
+
+cmd_more:
+{
+    lda #do_cat.OPT_P
+    jmp cmd_cat.options_ok
+}
 
 cmd_cat:
 {
     needs_parameters(1)
     stw_r(1, options_cat)
     jsr check_options
+options_ok:
     sta options
 
     // sauve device courant pour référence aux
@@ -577,7 +591,7 @@ cmd_cat:
 options:
     .byte 0
 options_cat:
-    pstring("BEN")
+    pstring("BENP")
 }
 
 // do_cat : effectue la commande CAT unitaire, nom en R0
@@ -587,11 +601,13 @@ do_cat:
     .label OPT_B=1
     .label OPT_E=2
     .label OPT_N=4
+    .label OPT_P=8
 
     // initialisation
     ldy #0
     sty num_lignes
     sty num_lignes+1
+    sty cpt_ligne
 
     // passe le nom en r0 par un objet ppath
     // mise à jour device + nom construit dans r0
@@ -620,15 +636,15 @@ do_cat:
     bne end
 
 boucle_cat:
-    jsr $FFE1      // RUN/STOP pressed?
-    beq end
-
     jsr bios.do_file_readline
     bcs derniere_ligne
     jsr affiche_ligne
-    jmp boucle_cat
+    jsr STOP
+    beq end
+    bne boucle_cat
 
 affiche_ligne:
+    jsr option_pagination
     jsr option_numero
     call_bios(bios.pprint, work_buffer)
 
@@ -656,6 +672,8 @@ end:
     clc
     rts
 
+    // erreur : file not found
+
 error:
     ldx #2
     jsr bios.do_file_close
@@ -664,6 +682,45 @@ error:
     call_bios(bios.error, msg_error.file_not_found)
     rts
 
+    // option pagination : affichage sur 13 lignes max
+
+option_pagination:
+    lda cmd_cat.options
+    and #OPT_P
+    beq pas_opt_p
+    inc cpt_ligne
+    lda cpt_ligne
+    cmp #13
+    bne pas_opt_p
+
+    lda #0
+    sta cpt_ligne
+    call_bios(bios.pprint, msg_suite)
+    ldy #6
+wait_key:
+    lda KEYPRESS
+    cmp #$40
+    beq wait_key
+    cmp #$01
+    beq key_ok
+    cmp #$07
+    beq key_ok
+    cmp #$3c
+    beq key_ok
+    cmp #$3f
+    beq key_ok
+    bne wait_key
+key_ok:
+    lda #20
+    jsr CHROUT
+    dey
+    bne key_ok
+
+pas_opt_p:
+    rts
+
+msg_suite:
+    pstring("%CF<MORE>%C5")
 option_numero:
     lda cmd_cat.options
     and #OPT_B
@@ -690,7 +747,8 @@ pas_inc:
 pas_numero:
     rts
 
-
+cpt_ligne:
+    .byte 0
 num_lignes:
     .word 0
 }
@@ -1143,7 +1201,7 @@ size40:
     jmp size40
 
 do_next:
-    jsr $FFE1      // RUN/STOP pressed?
+    jsr STOP
     beq error      // no RUN/STOP -> continue
     jmp next
 error:
@@ -1435,7 +1493,8 @@ non_trouve:
     lda (zr0),y
     cmp #'H'
     bne pas_script
-    rts
+
+    jmp script_execute
 
 pas_script:
     call_bios(bios.error, msg_error.command_not_found)
@@ -1454,10 +1513,44 @@ command_execute:
     jmp jmp_cmd:$fce2
 }
 
-msg_non_trouve:
-    pstring("COMMANDE NON TROUVEE")
-msg_trouve:
-    pstring("COMMANDE OK")
+script_execute:
+{
+    // ouverture en lecture, nom dans r0
+    ldx #7
+    clc
+    bios(bios.file_open)
+    bcc next_line
+    jmp error
+next_line:
+    ldx #7
+    sec
+    call_bios(bios.read_buffer, input_buffer)
+    bcs fini
+
+    // si ligne vide, empty ou commence par # = ignore
+    bios(bios.str_empty)
+    bcc next_line
+    ldy #1
+    lda (zr0),y
+    cmp #'#'
+    beq next_line
+
+    // sinon traite la ligne
+    stw_r(0, input_buffer)
+    jsr command_process
+
+    //call_bios(bios.pprintnl, work_buffer)
+    jmp next_line
+fini:
+    ldx #7
+    bios(bios.file_close)
+    clc
+    rts
+error:
+    jsr fini
+    call_bios(bios.error, msg_error.command_not_found)
+    rts
+}
 
 nb_history:
     .byte 0
@@ -1950,6 +2043,8 @@ internal_commands:
     .word shell.cmd_ll
     pstring("CLEAR")
     .word shell.cmd_clear
+    pstring("MORE")
+    .word shell.cmd_more
 
     //-- aliases
     pstring("$")
@@ -1993,7 +2088,7 @@ prompt_value:
 path_value:
     pstring("//PATH/")
 device_value:
-    pstring("9")
+    pstring("10")
 config_value:
     pstring("9://CONFIG/")
 
