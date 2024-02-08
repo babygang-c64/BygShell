@@ -192,6 +192,9 @@ cmd_lsblk:
 
 cmd_dump:
 {
+    sec
+    jsr option_pagine
+
     lda type_dump
     beq dump_env
 
@@ -253,6 +256,8 @@ type_env:
 suite_env:
     str_r(3, 1)
     jsr bios.do_pprintnl
+    clc
+    jsr option_pagine
 
     pop_r(0)
 
@@ -1897,7 +1902,7 @@ cmd_help:
     str_r(0, 1)
     lda bios.device
     sta bios.save_device
-    lda #0
+    lda #do_cat.OPT_P
     sta cmd_cat.options
     jsr do_cat
     ldx bios.save_device
@@ -1907,12 +1912,15 @@ cmd_help:
     rts
 
 no_params:
+    call_bios(bios.pprintnl, help_message)
     lda #1
     sta cmd_dump.type_dump
     jmp cmd_dump
 
 help_location:
     pstring("%VCONFIG%%P5.HLP")
+help_message:
+    pstring(" LIST OF COMMANDS TRY HELP [COMMAND] OR HELP ME")
 }
 
 //---------------------------------------------------------------
