@@ -556,6 +556,56 @@ pos_cat:
     .byte 0
 }
 
+// option_pagine : gestion option de pagination pour les
+// affichages dans CAT / LS
+// entrée : si C=1 alors initalisation
+
+option_pagine:
+{
+    bcc do_pagination
+    lda #0
+    sta cpt_ligne
+    clc
+    rts
+
+do_pagination:
+    inc cpt_ligne
+    lda cpt_ligne
+    cmp #13
+    bne pas_opt_p
+
+    lda #0
+    sta cpt_ligne
+    call_bios(bios.pprint, msg_suite)
+    ldy #6
+wait_key:
+    lda KEYPRESS
+    cmp #$40
+    beq wait_key
+    cmp #$01
+    beq key_ok
+    cmp #$07
+    beq key_ok
+    cmp #$3c
+    beq key_ok
+    cmp #$3f
+    beq key_ok
+    bne wait_key
+key_ok:
+    lda #20
+    jsr CHROUT
+    dey
+    bne key_ok
+
+pas_opt_p:
+    rts
+
+cpt_ligne:
+    .byte 0
+msg_suite:
+    pstring("%CF<MORE>%C5")
+}
+
 //----------------------------------------------------
 // cmd_cat : affichage fichier
 //
@@ -607,7 +657,6 @@ do_cat:
     ldy #0
     sty num_lignes
     sty num_lignes+1
-    sty cpt_ligne
 
     // passe le nom en r0 par un objet ppath
     // mise à jour device + nom construit dans r0
@@ -620,6 +669,9 @@ do_cat:
     clc
     call_bios(bios.build_path, work_buffer)
     stw_r(0, work_buffer)
+
+    sec
+    jsr option_pagine
 
     // ouverture en lecture, nom dans r0
     ldx #2
@@ -688,39 +740,10 @@ option_pagination:
     lda cmd_cat.options
     and #OPT_P
     beq pas_opt_p
-    inc cpt_ligne
-    lda cpt_ligne
-    cmp #13
-    bne pas_opt_p
-
-    lda #0
-    sta cpt_ligne
-    call_bios(bios.pprint, msg_suite)
-    ldy #6
-wait_key:
-    lda KEYPRESS
-    cmp #$40
-    beq wait_key
-    cmp #$01
-    beq key_ok
-    cmp #$07
-    beq key_ok
-    cmp #$3c
-    beq key_ok
-    cmp #$3f
-    beq key_ok
-    bne wait_key
-key_ok:
-    lda #20
-    jsr CHROUT
-    dey
-    bne key_ok
-
+    jmp option_pagine
 pas_opt_p:
     rts
 
-msg_suite:
-    pstring("%CF<MORE>%C5")
 option_numero:
     lda cmd_cat.options
     and #OPT_B
@@ -747,8 +770,6 @@ pas_inc:
 pas_numero:
     rts
 
-cpt_ligne:
-    .byte 0
 num_lignes:
     .word 0
 }
@@ -1043,7 +1064,9 @@ cmd_clear:
 // 
 // options :
 //
-// 0 : L = liste en format long
+// L = liste en format long
+// D = liste seulement les répertoires
+// P = pagine la sortie
 //----------------------------------------------------
 
 cmd_ll:
@@ -1057,6 +1080,10 @@ cmd_ls:
     .label FT_DISKNAME=1
     .label FT_FREE=2
     .label FT_SIZE=4
+
+    .label OPT_LONG=1
+    .label OPT_DIR=2
+    .label OPT_PAGE=4
     
     // vérifie la présence d'options ou non
 
@@ -1075,8 +1102,11 @@ cmd_ls:
 filtre:
     pstring("0123456789ABCDEF")
 .print "filtre=$"+toHexString(filtre)
+
 options_ok:
     sta options
+    sec
+    jsr option_pagine
 
 pas_de_parametres:
 
@@ -1096,11 +1126,12 @@ pas_filtre:
     lda #0
     sta format
     lda options
-    cmp #1
-    bne pas_option_L
+    and #OPT_LONG
+    beq pas_option_L
 
     lda #FT_DISKNAME+FT_FREE+FT_SIZE
     sta format
+
 pas_option_L:
     lda #0
     sta colonnes
@@ -1127,6 +1158,13 @@ do_dir:
 
 not_ft_diskname:
 next:
+    lda options
+    and #OPT_PAGE
+    beq pas_opt_page
+    clc
+    jsr option_pagine
+
+pas_opt_page:
 
     jsr do_read_dir_entry
     bcc no_exit
@@ -1268,8 +1306,9 @@ tosize40:
     .byte 0
 options:
     .byte 0
+
 options_ls:
-    pstring("L")
+    pstring("LDP")
 }
 
 //----------------------------------------------------
