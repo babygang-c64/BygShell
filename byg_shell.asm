@@ -1203,7 +1203,16 @@ pas_blocs:
     //call_bios(bios.filter, filtre)
     //bcs filtre_ko
 
+    lda options
+    and #OPT_DIR
+    beq pas_filtre_dir
+    lda 1+dir_entry.type
+    cmp #'D'
+    bne filtre_ko
+
+pas_filtre_dir:
     call_bios(bios.pprint, dir_entry.type)
+suite_filtre_dir:
 
     // taille fichier
     lda dir_entry.size
