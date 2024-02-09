@@ -1886,6 +1886,129 @@ cmd_history:
 }
 
 //---------------------------------------------------------------
+// cmd_save_env : exporte les variables d'environnement
+//
+// paramètre : path/nom pour enregistrement
+//---------------------------------------------------------------
+
+cmd_save_env:
+{
+    needs_parameters(1)
+    ldx #1
+    call_bios(bios.list_get, parameters.list)
+    stw_r(1, work_path)
+    bios(bios.prep_path)
+    sec
+    stw_r(1, work_path)
+    call_bios(bios.build_path, work_buffer)
+    stw_r(0, work_buffer)
+    stw_r(1, cmd_cp.write_str)
+    bios(bios.add_str)
+
+
+    sec
+    ldx #3
+    call_bios(bios.file_open, work_buffer)
+    bcc ok_open
+    jmp erreur_open
+
+ok_open:
+    call_bios(bios.count_vars, var_names)
+    sta parcours_variables
+    cmp #0
+    bne ok_dump
+    jmp fin_dump
+
+ok_dump:
+    stw_r(0, var_names)
+    ldx #3
+    jsr CHKOUT
+
+boucle_dump:
+
+    // r2 = partie nom
+    str_r(2, 0)
+    
+    // r0 += longueur + 1 = adresse valeur
+    ldy #0
+    clc
+    lda (zr0),y
+    clc
+    adc #1
+    add_r(0)
+
+    // lecture adresse valeur -> dans r1
+    lda (zr0),y
+    sta zr1l
+    iny
+    lda (zr0),y
+    sta zr1h
+
+    // et ajout 2 pour positionner r0 sur le suivant
+    clc
+    lda #2
+    add_r(0)
+
+    push_r(0)
+
+    // ici : écriture
+
+    lda #'S'
+    jsr CHROUT
+    lda #'E'
+    jsr CHROUT
+    lda #'T'
+    jsr CHROUT
+    lda #32
+    jsr CHROUT
+
+    getbyte_r(2)
+    tax
+write_name:
+    getbyte_r(2)
+    jsr CHROUT
+    dex
+    bne write_name
+
+    lda #'='
+    jsr CHROUT
+
+    getbyte_r(1)
+    tax
+write_val:
+    getbyte_r(1)
+    jsr CHROUT
+    dex
+    bne write_val
+
+    lda #13
+    jsr CHROUT
+    jsr CLRCHN
+
+    pop_r(0)
+
+    dec parcours_variables
+    beq fin_dump 
+    jmp boucle_dump
+fin_dump:
+    ldx #3
+    bios(bios.file_close)
+
+    clc
+    rts
+
+parcours_variables:
+    .byte 0
+
+erreur_open:
+    ldx #3
+    bios(bios.file_close)
+    call_bios(bios.error, msg_error.write_error)
+    sec
+    rts
+}
+
+//---------------------------------------------------------------
 // cmd_help : affiche la liste des commandes internes
 //---------------------------------------------------------------
 
@@ -2101,6 +2224,8 @@ internal_commands:
     .word shell.cmd_clear
     pstring("MORE")
     .word shell.cmd_more
+    pstring("SAVEENV")
+    .word shell.cmd_save_env
 
     //-- aliases
     pstring("$")

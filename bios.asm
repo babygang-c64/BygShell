@@ -2627,19 +2627,16 @@ mode_path:
 }
 
 //---------------------------------------------------------------
-// is_digit : C=1 si A est un digi, C=0 sinon
+// is_digit : C=1 si A est un digit, C=0 sinon
 //---------------------------------------------------------------
 
 is_digit:
 {
-    cmp #'0'
-    bmi not_digit
-    cmp #$3a
-    bpl not_digit
-    sec
-    rts
-not_digit:
+    pha
     clc
+    adc #$ff-'9'
+    adc #'9'-'0'+1
+    pla
     rts
 }
 
