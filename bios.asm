@@ -1003,7 +1003,7 @@ do_list_reset:
     ldy #0
     tya
     sta (zr0),y
-    inc_r(0)
+    inc r0
 
     lda zr1l
     sta (zr0),y
@@ -2340,7 +2340,7 @@ copie_nom:
     pop rdest
     lda lgr_copie
     setbyte_r(reg_zdest)
-    dec_r(reg_zdest)
+    dec rdest
     clc
     rts
 lgr_copie:
@@ -2566,7 +2566,7 @@ do_cut:
     ldy #0
     lda (zr5),y
     add_r(5)
-    inc_r(5)
+    inc r5
     mov rdest, r5
     // source = OK
     // longueur = total - lgr_copie
@@ -3322,7 +3322,7 @@ pas_ajout_sep:
     add_r(reg_zsrc)
     lda (zsrc),y
     add_r(reg_zsrc)
-    inc_r(reg_zsrc)
+    inc rsrc
 
     jsr do_str_cat
 

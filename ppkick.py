@@ -60,9 +60,12 @@ for line in hin:
             newline = 'st_' + ptype0 + ptype1 + '(' + pval1 + ')'
         print('new [%s]' % newline)
         hout.write(newline + '\n')
-    elif instruction in ['push', 'pop']:
+    elif instruction in ['push', 'pop', 'inc', 'dec']:
         ptype0, pval0 = param_type(elems[1])
-        newline = instruction + '_r(' + pval0 + ')'
+        if ptype0 == 'r':
+            newline = instruction + '_r(' + pval0 + ')'
+        else:
+            newline = line
         hout.write(newline + '\n')
     else:
         hout.write(line)

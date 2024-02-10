@@ -1743,7 +1743,7 @@ pas_espace:
     lda #32
     sta separateur_test
     inc lgr_entree
-    dec_r(4)
+    dec r4
     jsr process_guillemets
     jmp teste_suite_chaine
 
