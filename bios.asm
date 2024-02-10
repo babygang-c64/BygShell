@@ -177,8 +177,8 @@ text_version:
 
 do_filter:
 {
-    push_r(0)
-    push_r(1)
+    push r0
+    push r1
     ldy #0
     getbyte_r(0)
     beq vide
@@ -216,13 +216,13 @@ test_fin:
     lda lgr_filtre
     beq vide
 ko:
-    pop_r(1)
-    pop_r(0)
+    pop r1
+    pop r0
     sec
     rts
 vide:
-    pop_r(1)
-    pop_r(0)
+    pop r1
+    pop r0
     clc
     rts
 
@@ -380,7 +380,7 @@ int_conv:
 
 do_str2int:
 {
-    push_r(0)
+    push r0
     ldy #0
     sty zr1l
     sty zr1h
@@ -388,7 +388,7 @@ do_str2int:
     sta lgr_str
     cmp #0
     bne next_char
-    pop_r(0)
+    pop r0
     tya
     clc
     rts
@@ -420,12 +420,12 @@ pas_inc:
     jmp next_char
 
 fin_transfo:
-    pop_r(0)
+    pop r0
     lda zr1l
     clc
     rts
 pas_int:
-    pop_r(0)
+    pop r0
     sec
     rts
 lgr_str:
@@ -472,9 +472,9 @@ do_error:
 {
     lda bios.color_error
     sta CURSOR_COLOR
-    str_r(1, 0)
+    push r0
     call_bios(bios.pprint, msg_error)
-    str_r(0, 1)
+    pop r0
     lda #pprintnl
     jsr bios_exec
     lda bios.color_text
@@ -564,22 +564,22 @@ pas_device_1:
 
 do_set_device_from_int:
 {
-    push_r(0)
+    push r0
     // conversion int en str
     stx zr0l
     stx device_tmp
     lda #0
     sta zr0h
-    stw_r(1, int_conv)
+    mov r1, int_conv
     jsr do_int2str
-    stw_r(0, int_conv)
+    mov r0, int_conv
     jsr do_lstrip
     .print "int_conv=$"+toHexString(int_conv)
 
     // remplace la variable DEVICE
-    str_r(1, 0)
+    mov r1, r0
     call_bios(setvar, do_set_device.text_device)
-    pop_r(0)
+    pop r0
     lda device_tmp
     jmp do_set_device.set_device
 device_tmp:
@@ -595,7 +595,7 @@ do_set_device:
 {
     // lecture variable device
     call_bios(bios.getvar, text_device)
-    str_r(0, 1)
+    mov r0, r1
     jsr do_str2int
     // si pas int, no device
     bcs no_device
@@ -723,24 +723,25 @@ lgr_ajout:
 do_file_load:
 {
     sta avec_separateur
-    str_r(2, 0) // sauvegarde nom
+    // sauvegarde nom
+    mov r2, r0
     jsr test_load    
     bcc load_ok
 
     // test avec PATH + NOM
 
     call_bios(bios.getvar, text_path)
-    str_r(0, 1)
-    stw_r(1, work_buffer)
+    mov r0, r1
+    mov r1, work_buffer
     // 0 : dest = work buffer, 1 = path, 2 = filename
 
     jsr bios.do_str_copy
 
-    stw_r(0, work_buffer)
-    str_r(1, 2)
+    mov r0, work_buffer
+    mov r1, r2
     jsr bios.do_add_str
     
-    stw_r(0, work_buffer)
+    mov r0, work_buffer
     jsr test_load
     bcc load_ok
 
@@ -761,6 +762,7 @@ load_ok:
     // A = présence paramètre si pas 0
     // paramètres en r0 = workbuffer + lgr commande
 
+    // not a typo :)
     lda work_buffer
     sta zr0l
     lda #>work_buffer
@@ -823,7 +825,7 @@ boucle:
     adc #1
     sta lgr_elem
 
-    str_r(0, 2)
+    mov r0, r2
     jsr do_pprintnl
 
     lda lgr_elem
@@ -864,8 +866,8 @@ do_list_rm:
     // r5 = nouveau pour écriture
     // r1 = pour lecture
 
-    str_r(5, 2)
-    str_r(1, 2)
+    mov r5, r2
+    mov r1, r2
     ldy #0
     ldx #0
 
@@ -953,7 +955,7 @@ do_list_get:
 
     // parcours pour trouver element
 
-    str_r(0, 2)
+    mov r0, r2
     ldy #0
     ldx #0
 
@@ -980,7 +982,7 @@ fin_get_trouve:
 
 fin_get_non_trouve:
     sec
-    stw_r(0, do_getvar.msg_pas_var)
+    mov r0, do_getvar.msg_pas_var
     ldx pos_elem
     rts
 
@@ -1034,26 +1036,26 @@ do_list_reset:
 
 do_list_add:
 {   
-    push_r(4) // sauvegarde r4
+    push r4 // sauvegarde r4
 
     jsr setup_list
     sta num_elem
 
-    push_r(0)
+    push r0
 
     // copie r0 vers r3 = ptr new
     // ptr last = r1
-    str_r(0, 1)
-    str_r(1, 3)
-    str_r(4, 1)
+    mov r0, r1
+    mov r1, r3
+    mov r4, r1
     jsr do_str_copy
     tay
-    pop_r(0)
+    pop r0
     tya
     jsr addelem_list
     lda num_elem
 
-    pop_r(4) // récupère r4
+    pop r4
     clc
     rts
 
@@ -1306,7 +1308,7 @@ fin_input:
     ldx max_x
     stx input_buffer
 
-    stw_r(0, input_buffer)
+    mov r0, input_buffer
     clc
     rts
 
@@ -1587,7 +1589,7 @@ do_str_expand:
     rts
 
 pas_vide:
-    push_r(1)
+    push r1
     lda #0
     setbyte_r(1)
     getbyte_r(0)
@@ -1610,7 +1612,7 @@ process_suite:
     bne process
 
 fin_process:
-    pop_r(1)
+    pop r1
     lda lgr_output
     ldy #0
     sta (zr1),y
@@ -1638,7 +1640,7 @@ pas_pct:
     asl
     tay
 
-    push_r(0)
+    push r0
     lda zr0l,y
     sta zr0l
     lda zr0h,y
@@ -1663,7 +1665,7 @@ pas_pct:
     adc #4
     sta lgr_output
 
-    pop_r(0)
+    pop r0
     jmp process_suite
 
 pas_registre:
@@ -1675,8 +1677,8 @@ process_variable:
 
     // V = variable : récupère la valeur d'une variable
 
-    push_r(1)
-    stw_r(1, work_name)
+    push r1
+    mov r1, work_name
     lda #0
     setbyte_r(1)
 
@@ -1697,12 +1699,12 @@ fin_copie_nom:
     // recherche contenu variable -> r1 -> r2 et copie
     // la valeur
 
-    push_r(0)
-    stw_r(0, work_name)
+    push r0
+    mov r0, work_name
     jsr do_getvar
-    str_r(2, 1)
-    pop_r(0)
-    pop_r(1)
+    mov r2, r1
+    pop r0
+    pop r1
 
 do_copy_var:
     ldy #0
@@ -1797,10 +1799,10 @@ lgr_output:
 
 do_pprint:
 {
-    push_r(1)
+    push r1
     tya
     pha
-    stw_r(1, work_pprint)
+    mov r1, work_pprint
     jsr do_str_expand
     lda work_pprint
     beq est_vide
@@ -1814,7 +1816,7 @@ aff:
 est_vide:
     pla
     tay
-    pop_r(1)
+    pop r1
     clc
     rts
 }
@@ -1911,7 +1913,7 @@ do_getvar:
     rts
 
 pas_var:
-    stw_r(1, msg_pas_var)
+    mov r1, msg_pas_var
     sec
     rts
 
@@ -1926,7 +1928,7 @@ msg_pas_var:
 
 do_setvar:
 {
-    push_r(1)
+    push r1
     jsr lookup_var
     bcc creation
     jmp pas_creation
@@ -1934,18 +1936,18 @@ do_setvar:
 creation:
     // création : 
     // copie nom variable
-    stw_r(1, ptr_last_variable)
+    mov r1, ptr_last_variable
     ldself_r(1)
     jsr do_str_copy
     add8(ptr_last_variable)
-    stw_r(3, ptr_last_variable)
+    mov r3, ptr_last_variable
 
     // copie valeur variable
-    pop_r(1)
-    str_r(0, 1) 
-    stw_r(1, ptr_last_value)
+    pop r1
+    mov r0, r1
+    mov r1, ptr_last_value
     ldself_r(1)
-    str_r(4, 1)
+    mov r4, r1
     jsr do_str_copy
     add8(ptr_last_value)
 
@@ -1964,11 +1966,11 @@ creation:
     // si update, supprime la variable et rappelle setvar
 pas_creation:
     tax
-    push_r(0)
+    push r0
     txa
     jsr do_rmvar
-    pop_r(0)
-    pop_r(1)
+    pop r0
+    pop r1
     jmp do_setvar
 }
 
@@ -1986,11 +1988,11 @@ do_rmvar:
     sta to_supp
 
     // source
-    stw_r(0, var_names)
-    stw_r(2, var_values)
+    mov r0, var_names
+    mov r2, var_values
     // destination
-    stw_r(1, var_names)
-    stw_r(3, var_values)
+    mov r1, var_names
+    mov r3, var_values
 
     // recopie des noms, sauf si numéro à supprimer
     ldy #0
@@ -2046,7 +2048,7 @@ passe_valeur:
     // ok = on recopie le nom, et la valeur
 copies_ok:
     // stocke dest valeur r3 pour renseigner le nom ensuite dans r4
-    str_r(4, 3)
+    mov r4, r3
 
     getbyte_r(2)
     sta nb_to_copy
@@ -2114,7 +2116,7 @@ nb_to_copy:
 
 lookup_cmd:
 {
-    stw_r(1, internal_commands)
+    mov r1, internal_commands
     lda nb_cmd
     sta nb_var_work
     jmp lookup_gen
@@ -2122,7 +2124,7 @@ lookup_cmd:
 
 lookup_var:
 {
-    stw_r(1, var_names)
+    mov r1, var_names
     lda nb_variables
     sta nb_var_work
 }
@@ -2239,7 +2241,7 @@ copie:
 
 do_print_path:
 {
-    push_r(0)
+    push r0
     // type et dev
     getbyte_r(0)
     sta zr4h
@@ -2248,14 +2250,14 @@ do_print_path:
     // ignore partition
     getbyte_r(0)
     // path
-    str_r(5, 0)
+    mov r5, r0
     getbyte_r(0)
     add_r(0)
     // name
-    str_r(6, 0)
+    mov r6, r0
 
     call_bios(bios.pprintnl, msg_path)
-    pop_r(0)
+    pop r0
     rts
 msg_path:
     pstring("TYPE/DEVICE (%R4) PATH (%P5) NAME (%P6)")
@@ -2327,7 +2329,7 @@ do_str_ncpy:
 {
     ldy #0
     stx lgr_copie
-    push_r(reg_zdest)
+    push rdest
     lda #0
     setbyte_r(reg_zdest)
 copie_nom:
@@ -2335,7 +2337,7 @@ copie_nom:
     setbyte_r(reg_zdest)
     dex
     bne copie_nom
-    pop_r(reg_zdest)
+    pop rdest
     lda lgr_copie
     setbyte_r(reg_zdest)
     dec_r(reg_zdest)
@@ -2357,7 +2359,7 @@ lgr_copie:
 do_prep_path:
 {
     // sauvegarde r0, raz ppath
-    push_r(0)
+    push r0
     ldy #4
     lda #0
 raz_path:
@@ -2372,7 +2374,7 @@ raz_path:
     bne process_entree
 
 fin_prep_path:
-    pop_r(0)
+    pop r0
     clc
     rts
 
@@ -2392,7 +2394,7 @@ suite_lecture:
     .byte 0
 
 syntax_error:
-    pop_r(0)
+    pop r0
     call_bios(bios.error, msg_error.invalid_parameters)
     sec
     rts
@@ -2468,15 +2470,15 @@ str_partition:
     // et stockage dans le PPATH, mise à jour TYPE
 
 convert_device_partition:
-    push_r(0)
-    str_r(2, 1)
-    stw_r(0, str_device)
+    push r0
+    mov r2, r1
+    mov r0, str_device
     jsr bios.do_str2int
     pha
-    stw_r(0, str_partition)
+    mov r0, str_partition
     jsr bios.do_str2int
     pha
-    str_r(1, 2)
+    mov r1, r2
     ldy #2
     pla
     sta (zr1),y
@@ -2496,7 +2498,7 @@ pas_int_partition:
     sta (zr1),y
 pas_int_device:
     ldy #0
-    pop_r(0)
+    pop r0
     clc
     rts
 
@@ -2516,13 +2518,13 @@ extract_path_name:
 
     // pas de découpage, nom seul, recopie dans partie nom
     
-    str_r(reg_zsrc, 0)
+    mov rsrc, r0
     lda suite_lecture
     add_r(reg_zsrc)
-    str_r(5, 1)
+    mov r5, r1
     lda #4
     add_r(5)
-    str_r(reg_zdest, 5)
+    mov rdest, r5
 
     sec
     lda lgr_entree
@@ -2541,13 +2543,13 @@ do_cut:
     stx lgr_copie
 
     // copie partie path
-    str_r(reg_zsrc, 0)
+    mov rsrc, r0
     lda suite_lecture
     add_r(reg_zsrc)
-    str_r(5, 1)
+    mov r5, r1
     lda #3
     add_r(5)
-    str_r(reg_zdest, 5)
+    mov rdest, r5
 
     sec
     lda lgr_copie
@@ -2558,14 +2560,14 @@ do_cut:
 
     // destination 
     ldy #0
-    str_r(5, 1)
+    mov r5, r1
     lda #3
     add_r(5)
     ldy #0
     lda (zr5),y
     add_r(5)
     inc_r(5)
-    str_r(reg_zdest, 5)
+    mov rdest, r5
     // source = OK
     // longueur = total - lgr_copie
     ldy #0
@@ -3209,12 +3211,12 @@ do_file_open:
     rol
     sta read_write
     stx canal
-    push_r(0)
+    push r0
     //str_r(5, 0)
     //call_bios(bios.pprintnl, msg_nom)
     // ensure current device
     jsr bios.do_set_device
-    pop_r(0)
+    pop r0
 
     // set name
     ldy #0
@@ -3285,7 +3287,7 @@ do_build_path:
     sta pas_ajout
 
     // raz dest
-    str_r(reg_zdest, 0)
+    mov rdest, r0
     ldy #0
     tya
     sta (zdest),y
@@ -3295,7 +3297,7 @@ do_build_path:
     and #PPATH.WITH_PATH
     beq pas_path
 
-    str_r(reg_zsrc, 1)
+    mov rsrc, r1
     lda #3
     add_r(reg_zsrc)
 
@@ -3311,11 +3313,11 @@ pas_path:
     lda pas_ajout
     bne pas_ajout_sep
 
-    stw_r(reg_zsrc, msg_sep)
+    mov rsrc, msg_sep
     jsr do_str_cat
 pas_ajout_sep:
 
-    str_r(reg_zsrc, 1)
+    mov rsrc, r1
     lda #3
     add_r(reg_zsrc)
     lda (zsrc),y
@@ -3377,7 +3379,7 @@ lecture_reste:
 
     jsr UNTLK
 
-    stw_r(0, code_status)
+    mov r0, code_status
     jsr bios.do_str2int
     beq code_ok
     sec
@@ -3427,7 +3429,7 @@ do_print_int:
     sta do_padding
     txa
     pha
-    stw_r(1, int_conv)
+    mov r1, int_conv
     jsr bios.do_int2str
 
     ldx #0
@@ -3524,7 +3526,7 @@ color_error:
 
 .macro call_bios(bios_func, word_param)
 {
-    stw_r(0, word_param)
+    mov r0, word_param
     lda #bios_func
     jsr bios.bios_exec
 }
