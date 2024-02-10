@@ -125,6 +125,22 @@ filename:
 //      ST<ore>[R<egister>/W<ord>] to [R<egister>/W<ord>]
 //===============================================================
 
+//---------------------------------------------------------------
+// <instruction>_<destination><source>
+//
+// instructions : mov, add, swp, inc
+//
+// destination / source :
+//
+// r = registre
+// w = word
+// a = accumumateur
+// i = indirect
+//
+// mov_rw
+// mov_wr
+// add_ra
+//---------------------------------------------------------------
 
 //---------------------------------------------------------------
 // stw_r(reg, word) : reg = word
