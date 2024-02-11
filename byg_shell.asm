@@ -107,7 +107,7 @@ sep_trouve:
     sbc #1
     sta (zr0),y
     tya
-    add_r(1)
+    add r1, a
     sec
     rts
 
@@ -227,7 +227,7 @@ boucle_dump:
     lda (zr0),y
     clc
     adc #1
-    add_r(0)
+    add r0, a
 
     // lecture adresse valeur -> dans r1
     lda (zr0),y
@@ -239,7 +239,7 @@ boucle_dump:
     // et ajout 2 pour positionner r0 sur le suivant
     clc
     lda #2
-    add_r(0)
+    add r0,a
 
     push r0
 
@@ -1935,7 +1935,7 @@ boucle_dump:
     lda (zr0),y
     clc
     adc #1
-    add_r(0)
+    add r0, a
 
     // lecture adresse valeur -> dans r1
     lda (zr0),y
@@ -1947,7 +1947,7 @@ boucle_dump:
     // et ajout 2 pour positionner r0 sur le suivant
     clc
     lda #2
-    add_r(0)
+    add r0, a
 
     push r0
 
@@ -2094,7 +2094,7 @@ juste_8:
     call_bios(bios.list_get, parameters.list)
     bios(bios.hex2int)
     push r0
-    add_r(8)
+    add r8, a
     lda zr0l
     sta stop_address
     lda zr0h

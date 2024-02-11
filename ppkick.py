@@ -67,6 +67,17 @@ for line in hin:
         else:
             newline = line
         hout.write(newline + '\n')
+    elif instruction == 'add':
+        ptype0, pval0 = param_type(elems[1])
+        ptype1, pval1 = param_type(elems[3])
+        if ptype0 == 'r' and ptype1 == 'a':
+            newline = 'add_r(' + pval0 + ')'
+            hout.write(newline + '\n')
+        else:
+            print(ptype0, pval0)
+            print(ptype1, pval1)
+            print('error', line)
+            input('wait')
     else:
         hout.write(line)
 

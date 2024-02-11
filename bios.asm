@@ -273,7 +273,7 @@ trouve:
     ldy longueur
     sta (zr0),y
     tya
-    add_r(0)
+    add r0, a
 fini:
     clc
     rts
@@ -448,9 +448,9 @@ boucle:
     cmp #0
     beq fin
 
-    add_r(0)
+    add r0, a
     lda #2
-    add_r(0)
+    add r0, a
     inc nb_variables
     bne boucle
 
@@ -829,7 +829,7 @@ boucle:
     jsr do_pprintnl
 
     lda lgr_elem
-    add_r(2)
+    add r2, a
     dec nb_elem
     bne boucle
 fin:
@@ -2152,7 +2152,7 @@ check_name:
     clc
     lda lgr_varname
     adc #3
-    add_r(1)
+    add r1, a
     inc num_var
     lda num_var
     cmp nb_var_work
@@ -2165,7 +2165,7 @@ var_existe:
     clc
     lda lgr_varname
     adc #1
-    add_r(1)
+    add r1, a
     ldself_r(1)
 
     lda num_var
@@ -2252,7 +2252,7 @@ do_print_path:
     // path
     mov r5, r0
     getbyte_r(0)
-    add_r(0)
+    add r0, a
     // name
     mov r6, r0
 
@@ -2520,10 +2520,10 @@ extract_path_name:
     
     mov rsrc, r0
     lda suite_lecture
-    add_r(reg_zsrc)
+    add rsrc, a
     mov r5, r1
     lda #4
-    add_r(5)
+    add r5, a
     mov rdest, r5
 
     sec
@@ -2545,10 +2545,10 @@ do_cut:
     // copie partie path
     mov rsrc, r0
     lda suite_lecture
-    add_r(reg_zsrc)
+    add rsrc, a
     mov r5, r1
     lda #3
-    add_r(5)
+    add r5, a
     mov rdest, r5
 
     sec
@@ -2562,10 +2562,10 @@ do_cut:
     ldy #0
     mov r5, r1
     lda #3
-    add_r(5)
+    add r5, a
     ldy #0
     lda (zr5),y
-    add_r(5)
+    add r5, a
     inc r5
     mov rdest, r5
     // source = OK
@@ -3299,7 +3299,7 @@ do_build_path:
 
     mov rsrc, r1
     lda #3
-    add_r(reg_zsrc)
+    add rsrc, a
 
     jsr do_str_cat
 
@@ -3319,9 +3319,9 @@ pas_ajout_sep:
 
     mov rsrc, r1
     lda #3
-    add_r(reg_zsrc)
+    add rsrc, a
     lda (zsrc),y
-    add_r(reg_zsrc)
+    add rsrc, a
     inc rsrc
 
     jsr do_str_cat
