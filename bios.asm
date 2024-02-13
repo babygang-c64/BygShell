@@ -175,7 +175,7 @@ text_version:
 // sortie : C=1 KO, C=0 OK
 //---------------------------------------------------------------
 
-do_filter:
+do_filter_old:
 {
     push r0
     push r1
@@ -2629,6 +2629,92 @@ mode_path:
 }
 
 //---------------------------------------------------------------
+// filter : pattern matching, C=1 si OK, C=0 sinon
+// r0 : chaine à tester
+// r1 : pattern
+//---------------------------------------------------------------
+
+do_filter:
+{
+    ldy #1
+    sty pos_pattern
+    dey
+    sty pos_str
+    lda (zr0),y
+    sta lgr_str
+    lda (zr1),y
+    sta lgr_pattern
+next:
+    // prochain caractère pattern
+    ldy pos_pattern
+    lda (zr1),y
+    cmp #'*'
+    beq star
+    inc pos_str
+    ldy pos_str
+
+    // ? = n'importe quel caractère sauf fin
+    // de chaine
+    cmp #'?'
+    bne reg
+    lda (zr0),y
+    cpy lgr_str
+    beq fail
+
+    // caractères standard, HS si différents
+reg:
+    cmp (zr0),y
+    bne fail
+
+    // caractère suivant pattern
+    inc pos_pattern
+    ldy pos_pattern
+    cmp lgr_pattern
+    bne next
+found:
+    sec
+    rts
+
+    // * : si plusieurs, avance dans pattern
+star:
+    inc pos_pattern
+    ldy pos_pattern
+    cpy lgr_pattern
+    beq found
+    cmp (zr1),y
+    beq star
+
+stloop:
+    lda pos_pattern
+    pha
+    lda pos_str
+    pha
+    jsr next
+    pla
+    sta pos_str
+    pla
+    sta pos_pattern
+    bcs found
+    inc pos_str
+    lda pos_str
+    cmp lgr_str
+    bne stloop
+fail:
+    clc
+    rts
+
+pos_str:
+    .byte 0
+pos_pattern:
+    .byte 0
+lgr_str:
+    .byte 0
+lgr_pattern:
+    .byte 0
+}
+
+
+//---------------------------------------------------------------
 // is_digit : C=1 si A est un digit, C=0 sinon
 //---------------------------------------------------------------
 
@@ -3046,8 +3132,9 @@ boucle_lecture:
     
     // todo ici  : erreur dépassement buffer
 erreur:
-    inc $d020
-    jmp erreur
+    call_bios(bios.error, msg_error.buffer_overflow)
+    sec
+    rts
 
 fin_ligne:
     sty work_buffer

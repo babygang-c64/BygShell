@@ -223,13 +223,13 @@ boucle_dump:
     
     // r0 += longueur + 1 = adresse valeur
     ldy #0
-    clc
     lda (zr0),y
     clc
     adc #1
     add r0, a
 
     // lecture adresse valeur -> dans r1
+    // devrait être un mov r1, (r0)
     lda (zr0),y
     sta zr1l
     iny
@@ -610,6 +610,25 @@ cpt_ligne:
 msg_suite:
     pstring("%CF<MORE>%C5")
 }
+
+//----------------------------------------------------
+// cmd_input : saisie utilisateur, stockage dans
+// la variable indiquée en paramètre
+//----------------------------------------------------
+
+cmd_input:
+{
+    needs_parameters(1)
+    ldx #1
+    call_bios(bios.list_get, parameters.list)
+    mov r1, r0
+    bios(bios.input)
+    swap r0, r1
+    bios(bios.setvar)
+    clc
+    rts
+}
+
 
 //----------------------------------------------------
 // cmd_cat : affichage fichier
@@ -1492,16 +1511,15 @@ pas_copie_history:
 
 toplevel:
     // affiche le prompt
-    mov r0, varprompt
-    jsr bios.do_getvar
+    call_bios(bios.getvar, varprompt)
     mov r0, r1
-    jsr bios.do_pprint
+    bios(bios.pprint)
 
     // si on dépasse le max historique : supprime 1 enreg
     jsr check_history
 
     // lecture de la commande, retour en r0 = input_buffer
-    jsr bios.do_input
+    bios(bios.input)
     
     // ajout à l'historique
     jsr add_history
@@ -2226,6 +2244,8 @@ internal_commands:
     .word shell.cmd_more
     pstring("SAVEENV")
     .word shell.cmd_save_env
+    pstring("INPUT")
+    .word shell.cmd_input
 
     //-- aliases
     pstring("$")
@@ -2325,6 +2345,8 @@ device_not_present:
     pstring("DEVICE NOT PRESENT")
 needs_parameters:
     pstring("NEEDS PARAMETERS")
+buffer_overflow:
+    pstring("OVERFLOW")
 invalid_option:
 invalid_parameters:
     pstring("INVALID PARAMETERS")
