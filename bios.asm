@@ -2648,6 +2648,7 @@ next:
     // prochain caractère pattern
     ldy pos_pattern
     lda (zr1),y
+    sta $0400,y
     cmp #'*'
     beq star
     inc pos_str
@@ -2657,19 +2658,21 @@ next:
     // de chaine
     cmp #'?'
     bne reg
-    lda (zr0),y
+
     cpy lgr_str
     beq fail
+    bne next_pattern
 
     // caractères standard, HS si différents
 reg:
     cmp (zr0),y
     bne fail
 
+next_pattern:
     // caractère suivant pattern
     inc pos_pattern
     ldy pos_pattern
-    cmp lgr_pattern
+    cpy lgr_pattern
     bne next
 found:
     sec

@@ -622,6 +622,14 @@ cmd_input:
     ldx #1
     call_bios(bios.list_get, parameters.list)
     mov r1, r0
+    lda parameters.list
+    cmp #3
+    bne pas_texte
+    bios(bios.pprint)
+    ldx #2
+    call_bios(bios.list_get, parameters.list)
+    mov r1, r0
+pas_texte:
     bios(bios.input)
     swap r0, r1
     bios(bios.setvar)
@@ -629,6 +637,30 @@ cmd_input:
     rts
 }
 
+//----------------------------------------------------
+// cmd_filter : test filtre
+//----------------------------------------------------
+
+cmd_filter:
+{
+    call_bios(bios.getvar, var_test)
+    mov r2, r1
+    call_bios(bios.getvar, var_pattern)
+    mov r0, r2
+    bios(bios.filter)
+    bcc no_match
+    call_bios(bios.pprintnl, msg_match)
+no_match:
+    clc
+    rts
+
+var_test:
+    pstring("TEST")
+var_pattern:
+    pstring("PATTERN")
+msg_match:
+    pstring("MATCHING")
+}
 
 //----------------------------------------------------
 // cmd_cat : affichage fichier
@@ -2246,6 +2278,8 @@ internal_commands:
     .word shell.cmd_save_env
     pstring("INPUT")
     .word shell.cmd_input
+    pstring("FILTER")
+    .word shell.cmd_filter
 
     //-- aliases
     pstring("$")
