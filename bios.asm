@@ -1970,12 +1970,14 @@ creation:
 
     // si update, supprime la variable et rappelle setvar
 pas_creation:
+    pha
+    mov r1, work_buffer
+    mov r0, rdest
+    bios(bios.str_copy)
+    pla
     jsr do_rmvar
-loop:
-    inc $d020
-    jmp loop
     mov r0, rsrc
-    mov r1, rdest
+    mov r1, work_buffer
     jmp do_setvar
 }
 
