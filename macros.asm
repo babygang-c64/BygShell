@@ -213,6 +213,23 @@ pas_inc:
 }
 
 //---------------------------------------------------------------
+// addr_r(regdest, reg) : regdest += reg
+// Y preserved
+// add regdest, reg
+//---------------------------------------------------------------
+
+.macro addr_r(regdest, reg)
+{
+    clc
+    lda zr0l+2*regdest
+    adc zr0l+2*reg
+    sta zr0l+2*regdest
+    lda zr0l+2*regdest+1
+    adc zr0l+2*reg+1
+    sta zr0l+2*regdest+1
+}
+
+//---------------------------------------------------------------
 // add8(adr) : (adr) = (adr)+A
 // Y preserved
 //---------------------------------------------------------------
