@@ -1140,6 +1140,7 @@ do_input:
     ldx #0
     stx write_x
     stx max_x
+    stx input_buffer
 
 get_next:
     jsr GETIN
@@ -1928,7 +1929,10 @@ msg_pas_var:
 
 do_setvar:
 {
-    push r1
+    // sauvegarde r0 nom dans rsrc et r1 valeur dans rdest
+    mov rsrc, r0
+    mov rdest, r1
+    // var existe ?
     jsr lookup_var
     bcc creation
     jmp pas_creation
@@ -1937,16 +1941,17 @@ creation:
     // création : 
     // copie nom variable
     mov r1, ptr_last_variable
-    ldself_r(1)
+    mov r1, (r1)
     jsr do_str_copy
     add8(ptr_last_variable)
     mov r3, ptr_last_variable
 
     // copie valeur variable
-    pop r1
-    mov r0, r1
+    mov r0, rdest
+    //pop r1
+    //mov r0, r1
     mov r1, ptr_last_value
-    ldself_r(1)
+    mov r1, (r1)
     mov r4, r1
     jsr do_str_copy
     add8(ptr_last_value)
@@ -1965,18 +1970,21 @@ creation:
 
     // si update, supprime la variable et rappelle setvar
 pas_creation:
-    tax
-    push r0
-    txa
     jsr do_rmvar
-    pop r0
-    pop r1
+loop:
+    inc $d020
+    jmp loop
+    mov r0, rsrc
+    mov r1, rdest
     jmp do_setvar
 }
 
 .print "ptr_last_variable=$"+toHexString(ptr_last_variable)
 .print "ptr_last_value=$"+toHexString(ptr_last_value)
 .print "nb_variables=$"+toHexString(nb_variables)
+
+.print "var_names=$"+toHexString(var_names)
+.print "var_values=$"+toHexString(var_values)
 
 //---------------------------------------------------------------
 // do_rmvar : supprime une variable
@@ -2003,6 +2011,7 @@ copies:
     bne copies_ok
 
     // à supprimer = passe nom et adresse valeur
+    // si longueur = 0 = fin = non trouvé
     getbyte_r(0)
     cmp #0
     bne ok_suite
@@ -2019,6 +2028,7 @@ ok_suite:
     sta ptr_last_variable
     dec nb_to_copy
 
+    // 
 passe_nom:
     getbyte_r(0)
     dec nb_to_copy
@@ -2166,7 +2176,7 @@ var_existe:
     lda lgr_varname
     adc #1
     add r1, a
-    ldself_r(1)
+    mov r1, (r1)
 
     lda num_var
     sec

@@ -22,6 +22,14 @@ def param_type(param):
             pval = 'reg_zsrc'
         else:
             pval = param[1:].lower()
+    elif param[0] == '(':
+            ptype= 's'
+            if param.lower() == '(rdest)':
+                pval = 'reg_zdest'
+            elif param.lower() == '(rsrc)':
+                pval = 'reg_zsrc'
+            else:
+                pval = param[2:-1]
 
     return ptype, pval
 

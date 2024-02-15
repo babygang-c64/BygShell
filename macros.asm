@@ -267,22 +267,44 @@ pas_inc:
 }
 
 //---------------------------------------------------------------
-// ldself_r(reg) : reg = word at the address in reg
+// sts_r(reg_dest, reg) : reg_dest = word at the address in reg
 // Y not preserved
+// mov r0, (r1)
 //---------------------------------------------------------------
 
-.macro ldself_r(reg)
+.macro sts_r(reg_dest, reg)
 {
     ldy #0
     lda (zr0+2*reg),y
     sta ztmp
     iny
     lda (zr0+2*reg),y
-    sta ztmp+1
+    sta zr0+2*reg_dest+1
     lda ztmp
-    sta zr0+2*reg
-    lda ztmp+1
-    sta zr0+1+2*reg
+    sta zr0+2*reg_dest
+}
+
+//---------------------------------------------------------------
+// str_s(reg_dest, reg) : (reg_dest) = reg
+// stores reg at address in reg_dest
+// Y not preserved
+// mov (r1), r0
+//---------------------------------------------------------------
+
+.macro str_s(reg_dest, reg)
+{
+    ldy #0
+    lda (zr0+2*reg_dest),y
+    sta ztmp
+    iny
+    lda (zr0+2*reg_dest),y
+    sta ztmp+1
+    dey
+    lda zr0l+2*reg
+    sta (ztmp),y
+    iny
+    lda zr0h+2*reg
+    sta (ztmp),y
 }
 
 //---------------------------------------------------------------

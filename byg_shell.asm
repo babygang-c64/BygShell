@@ -625,13 +625,16 @@ cmd_input:
     lda parameters.list
     cmp #3
     bne pas_texte
+
     bios(bios.pprint)
     ldx #2
     call_bios(bios.list_get, parameters.list)
     mov r1, r0
 pas_texte:
     bios(bios.input)
+    //bios(bios.pprintnl)
     swap r0, r1
+    //bios(bios.pprintnl)
     bios(bios.setvar)
     clc
     rts
