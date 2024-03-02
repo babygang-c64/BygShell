@@ -171,6 +171,8 @@ filename:
 //---------------------------------------------------------------
 // getbyte_r(reg) : A = byte(reg), reg++
 // Y should be 0
+// devrait être getnextbyte / getbyte
+// préprocesseur à voir : mov a,(r0) / mov a,(r0++)
 //---------------------------------------------------------------
 
 .macro getbyte_r(reg)
@@ -185,6 +187,8 @@ pas_inc:
 //---------------------------------------------------------------
 // setbyte_r(reg) : byte(reg) = A, reg++
 // Y should be 0
+// devrait être setbyte / setnextbyte
+// mov (r0), a et mov (r0++), a
 //---------------------------------------------------------------
 
 .macro setbyte_r(reg)

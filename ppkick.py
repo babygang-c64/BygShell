@@ -23,13 +23,15 @@ def param_type(param):
         else:
             pval = param[1:].lower()
     elif param[0] == '(':
-            ptype= 's'
-            if param.lower() == '(rdest)':
+            ptype = 's'
+            pval = param[2:-1].lower()
+            if pval[-2:] == '++':
+                ptype += 'i'
+                pval = pval[:-2]
+            if pval == 'rdest':
                 pval = 'reg_zdest'
-            elif param.lower() == '(rsrc)':
+            if pval == 'rsrc':
                 pval = 'reg_zsrc'
-            else:
-                pval = param[2:-1]
 
     return ptype, pval
 
@@ -64,8 +66,12 @@ for line in hin:
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
         elif ptype0 == 'a':
             newline = 'st_' + ptype0 + ptype1 + '(' + pval1 + ')'
+        elif ptype1 == 'a':
+            # mov a, r<num> -> st_ar(<num>)
+            newline = 'st_' + ptype1 + ptype0 + '(' + pval0 + ')'
         else:
-            newline = 'st_' + ptype0 + ptype1 + '(' + pval1 + ')'
+            # mov r<num>, a -> 
+            newline = 'st_' + ptype0 + ptype1 + '(' + pval0 + ', ' + pval1 + ')'
         print('new [%s]' % newline)
         hout.write(newline + '\n')
     elif instruction in ['push', 'pop', 'inc', 'dec']:
