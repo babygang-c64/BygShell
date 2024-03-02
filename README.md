@@ -3,13 +3,20 @@ Shell like commands for the C64
 
 ## Data structures
 
-### 16 bit registrers
+### 16 bit registers
 
 8 x 16bit registers (R0 to R7) are reserved on ZP starting at address $39
 They are referenced with the following pre-defined labels :
 zr0 to zr1 : base address of registers
 zr0l to zr1l : lower bytes of registers
 zr0h to zr1h : higher bytes of registers
+
+## macros with pre-processor for 16 bit registers
+
+mov r<n>, r<m>
+mov r<n>, <addr>
+inc r<n>
+dec r<n>
 
 ### pStrings
 
