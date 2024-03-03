@@ -2648,86 +2648,134 @@ mode_path:
 
 do_filter:
 {
-    ldy #1
-    sty pos_pattern
-    dey
-    sty pos_str
-    lda (zr0),y
-    sta lgr_str
-    lda (zr1),y
-    sta lgr_pattern
-next:
-    // prochain caractère pattern
-    ldy pos_pattern
-    lda (zr1),y
-    sta $0400,y
+    .label zstring = zr0
+    .label zwild = zr1
+
+    ldy #0
+    lax (zstring),y
+    inx
+    stx lgr_string
+    lax (zwild),y
+    inx
+    stx lgr_wild
+    iny
+    sty pos_wild
+    sty pos_string
+
+while1:
+    lda pos_string
+    cmp lgr_string
+    beq end_while1
+
+    ldy pos_wild
+    lda (zwild),y
     cmp #'*'
-    beq star
-    inc pos_str
-    ldy pos_str
+    beq end_while1
 
-    // ? = n'importe quel caractère sauf fin
-    // de chaine
+    ldy pos_wild
+    lda (zwild),y
+    ldy pos_string
+    cmp (zstring),y
+    beq suite_while1
     cmp #'?'
-    bne reg
-
-    cpy lgr_str
-    beq fail
-    bne next_pattern
-
-    // caractères standard, HS si différents
-reg:
-    cmp (zr0),y
-    bne fail
-
-next_pattern:
-    // caractère suivant pattern
-    inc pos_pattern
-    ldy pos_pattern
-    cpy lgr_pattern
-    bne next
-found:
-    sec
-    rts
-
-    // * : si plusieurs, avance dans pattern
-star:
-    inc pos_pattern
-    ldy pos_pattern
-    cpy lgr_pattern
-    beq found
-    cmp (zr1),y
-    beq star
-
-stloop:
-    lda pos_pattern
-    pha
-    lda pos_str
-    pha
-    jsr next
-    pla
-    sta pos_str
-    pla
-    sta pos_pattern
-    bcs found
-    inc pos_str
-    lda pos_str
-    cmp lgr_str
-    bne stloop
-fail:
+    beq suite_while1
     clc
     rts
 
-pos_str:
+suite_while1:
+    inc pos_wild
+    inc pos_string
+    jmp while1
+end_while1:
+
+while2:
+    lda pos_string
+    cmp lgr_string
+    beq end_while2
+
+    ldy pos_wild
+    cmp lgr_wild
+    beq pas_etoile
+    lda (zwild),y
+    cmp #'*'
+    bne pas_etoile
+
+    inc pos_wild
+
+    lda pos_wild
+    cmp lgr_wild
+    bne suite
+    sec
+    rts
+suite:
+    lda pos_wild
+    sta pos_mp
+    ldy pos_string
+    iny
+    sty pos_cp
+    jmp while2
+
+pas_etoile:
+    ldy pos_wild
+    cpy lgr_wild
+    beq end_while2
+    lda (zwild),y
+    cmp #'?'
+    beq ok_comp
+    ldy pos_string
+    cpy lgr_string
+    beq end_while2
+    cmp (zstring),y
+    beq ok_comp
+
+not_ok_comp:
+    lda pos_mp
+    sta pos_wild
+    inc pos_cp
+    lda pos_cp
+    sta pos_string
+    jmp while2
+
+ok_comp:
+    inc pos_wild
+    inc pos_string
+    jmp while2
+
+end_while2:
+
+while3:
+    ldy pos_wild
+    cpy lgr_wild
+    beq fini_wild
+    lda (zwild),y
+    cmp #'*'
+    bne end_while3
+    inc pos_wild
+    jmp while3
+
+end_while3:
+    lda pos_wild
+    cmp lgr_wild
+    beq fini_wild
+    clc
+    rts
+fini_wild:
+    sec
+    rts
+
+lgr_string:
     .byte 0
-pos_pattern:
+lgr_wild:
     .byte 0
-lgr_str:
+pos_wild:
     .byte 0
-lgr_pattern:
+pos_string:
+    .byte 0
+pos_cp:
+    .byte 0
+pos_mp:
     .byte 0
 }
-
 
 //---------------------------------------------------------------
 // is_digit : C=1 si A est un digit, C=0 sinon
