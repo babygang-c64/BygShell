@@ -1982,24 +1982,14 @@ boucle_dump:
     mov r2, r0
     
     // r0 += longueur + 1 = adresse valeur
-    ldy #0
-    clc
-    lda (zr0),y
-    clc
-    adc #1
-    add r0, a
+    bios(bios.str_len)
+    add r0, #1
 
     // lecture adresse valeur -> dans r1
-    lda (zr0),y
-    sta zr1l
-    iny
-    lda (zr0),y
-    sta zr1h
+    mov r1, (r0)
 
     // et ajout 2 pour positionner r0 sur le suivant
-    clc
-    lda #2
-    add r0, a
+    add r0, #2
 
     push r0
 

@@ -351,7 +351,7 @@ pas_inc:
 
 //---------------------------------------------------------------
 // sts_r(reg_dest, reg) : reg_dest = word at the address in reg
-// Y not preserved
+//
 // mov r0, (r1)
 //---------------------------------------------------------------
 
@@ -365,12 +365,13 @@ pas_inc:
     sta zr0+2*reg_dest+1
     lda ztmp
     sta zr0+2*reg_dest
+    dey
 }
 
 //---------------------------------------------------------------
 // str_s(reg_dest, reg) : (reg_dest) = reg
 // stores reg at address in reg_dest
-// Y not preserved
+//
 // mov (r1), r0
 //---------------------------------------------------------------
 
@@ -388,28 +389,7 @@ pas_inc:
     iny
     lda zr0h+2*reg
     sta (ztmp),y
-}
-
-//---------------------------------------------------------------
-// str_rind(reg_dest, reg) : (reg_dest) = reg
-// stores reg at address in reg_dest
-// Y not preserved
-//---------------------------------------------------------------
-
-.macro str_rind(reg_dest, reg)
-{
-    ldy #0
-    lda (zr0+2*reg_dest),y
-    sta ztmp
-    iny
-    lda (zr0+2*reg_dest),y
-    sta ztmp+1
     dey
-    lda zr0l+2*reg
-    sta (ztmp),y
-    iny
-    lda zr0h+2*reg
-    sta (ztmp),y
 }
 
 //---------------------------------------------------------------

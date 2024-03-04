@@ -50,6 +50,8 @@
 .label print_path=34
 .label str_cmp=35
 .label str_chr=36
+.label str_lstrip=37
+.label str_len=38
 
 bios_jmp:
     .word do_reset
@@ -89,6 +91,8 @@ bios_jmp:
     .word do_print_path
     .word do_str_cmp
     .word do_str_chr
+    .word do_str_lstrip
+    .word do_str_len
 
 * = * "BIOS code"
 
@@ -245,11 +249,22 @@ lu:
 }
 
 //---------------------------------------------------------------
-// lstrip : enleve les espaces en début de chaine
+// str_len : renvoie dans A la longueur de la pstring en R0
+//---------------------------------------------------------------
+
+do_str_len:
+{
+    ldy #0
+    mov a, (r0)
+    rts
+}
+
+//---------------------------------------------------------------
+// str_lstrip : enleve les espaces en début de chaine
 // entrée : R0, sortie : R0 modifié
 //---------------------------------------------------------------
 
-do_lstrip:
+do_str_lstrip:
 {
     ldy #0
     lda (zr0),y
@@ -572,9 +587,7 @@ do_set_device_from_int:
     sta zr0h
     mov r1, int_conv
     jsr do_int2str
-    mov r0, int_conv
-    jsr do_lstrip
-    .print "int_conv=$"+toHexString(int_conv)
+    call_bios(bios.str_lstrip, int_conv)
 
     // remplace la variable DEVICE
     mov r1, r0
@@ -584,6 +597,7 @@ do_set_device_from_int:
     jmp do_set_device.set_device
 device_tmp:
     .byte 0
+    .print "int_conv=$"+toHexString(int_conv)
 }
 
 //---------------------------------------------------------------
@@ -1911,7 +1925,7 @@ creation:
     add8(ptr_last_value)
 
     // ecriture adresse valeur à la suite du nom
-    str_rind(3, 4)
+    mov (r3), r4
 
     // ajoute longueur adresse valeur à ptr_last_variable
     lda #2
@@ -2158,8 +2172,7 @@ nb_var_work:
 do_str_cmp:
 {
     // si pas même longueur = KO
-    ldy #0
-    lda (zr0),y
+    bios(bios.str_len)
     cmp (zr1),y
     bne comp_ko
     tay
@@ -2183,8 +2196,7 @@ comp_ko:
 
 do_str_copy:
 {
-    ldy #0
-    lda (zr0),y
+    bios(bios.str_len)
     pha
     tay
 copie:
