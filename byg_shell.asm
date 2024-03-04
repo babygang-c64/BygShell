@@ -841,9 +841,8 @@ num_lignes:
 
 cmd_do_cmd:
 {
-    lda #0
-    rol
-    sta avec_sep
+    stc avec_sep
+
     // analyse du path en R0, retour = work_path
     push r1
     mov r1, work_path

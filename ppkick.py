@@ -3,6 +3,16 @@
 import sys
 
 
+def get_size(value):
+    size = 16
+    if value[0] == '$':
+        if len(value) <= 3:
+            size = 8
+    elif value.isdigit() and int(value) < 256:
+            size = 8
+    return size
+
+
 def param_type(param):
     # type param : r, w, a, i
 
@@ -57,11 +67,11 @@ for line in hin:
         instruction = ''
 
     if instruction == 'mov':
-        print(elems, len(elems))
+        #print(elems, len(elems))
         ptype0, pval0 = param_type(elems[1])
         ptype1, pval1 = param_type(elems[3])
-        print("param 1 %s [%s]" % (ptype0, pval0))
-        print("param 2 %s [%s]" % (ptype1, pval1))
+        #print("param 1 %s [%s]" % (ptype0, pval0))
+        #print("param 2 %s [%s]" % (ptype1, pval1))
         if ptype0 != 'a' and ptype1 != 'a':
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
         elif ptype0 == 'a':
@@ -72,7 +82,7 @@ for line in hin:
         else:
             # mov r<num>, a -> 
             newline = 'st_' + ptype0 + ptype1 + '(' + pval0 + ', ' + pval1 + ')'
-        print('new [%s]' % newline)
+        #print('new [%s]' % newline)
         hout.write(newline + '\n')
     elif instruction in ['push', 'pop', 'inc', 'dec']:
         ptype0, pval0 = param_type(elems[1])
@@ -86,6 +96,13 @@ for line in hin:
         ptype1, pval1 = param_type(elems[3])
         if ptype0 == 'r' and ptype1 == 'a':
             newline = 'add_r(' + pval0 + ')'
+            hout.write(newline + '\n')
+        elif ptype0 == 'r' and ptype1=='i':
+            lgr_value = get_size(pval1)
+            if get_size(pval1) == 8:
+                newline = 'addi_r(' + pval0 +', ' + pval1 + ')'
+            else:
+                newline = 'addw_r(' + pval0 +', ' + pval1 + ')'
             hout.write(newline + '\n')
         else:
             print(ptype0, pval0)
@@ -103,6 +120,10 @@ for line in hin:
             print(ptype1, pval1)
             print('error', line)
             input('wait')
+    elif instruction == 'stc':
+        newline = 'stc(' + elems[1] + ')'
+        hout.write(newline + '\n')
+        print('stc = %s' % newline)
     else:
         hout.write(line)
 

@@ -145,6 +145,8 @@ filename:
 //---------------------------------------------------------------
 // stw_r(reg, word) : reg = word
 // preserves Y
+//
+// mov r<n>, addr
 //---------------------------------------------------------------
 
 .macro stw_r(reg, word_param)
@@ -158,6 +160,8 @@ filename:
 //---------------------------------------------------------------
 // str_w(word, reg) : (word) = reg
 // preserves Y
+//
+// mov addr, r<n>
 //---------------------------------------------------------------
 
 .macro str_w(word, reg)
@@ -198,6 +202,40 @@ pas_inc:
     bne pas_inc
     inc zr0h+2*reg
 pas_inc:
+}
+
+//---------------------------------------------------------------
+// addi_r(reg) : reg += 8 bits immediate value
+// Y preserved
+// add reg, #<value>
+//---------------------------------------------------------------
+
+.macro addi_r(reg, value)
+{
+    clc
+    lda #value
+    adc zr0l+2*reg
+    sta zr0l+2*reg
+    bcc pas_inc
+    inc zr0h+2*reg
+pas_inc:    
+}
+
+//---------------------------------------------------------------
+// addw_r(reg) : reg += 16 bits immediate value
+// Y preserved
+// add reg, #<value>
+//---------------------------------------------------------------
+
+.macro addw_r(reg, value)
+{
+    clc
+    lda #<value
+    adc zr0l+2*reg
+    sta zr0l+2*reg
+    lda zr0h+2*reg
+    adc #>value
+    sta zr0h+2*reg    
 }
 
 //---------------------------------------------------------------
@@ -246,6 +284,18 @@ pas_inc:
     bcc pas_inc
     inc adr+1
 pas_inc:    
+}
+
+//---------------------------------------------------------------
+// stc(dest) : store carry to dest
+// X, Y preserved
+//---------------------------------------------------------------
+
+.macro stc(dest)
+{
+    lda #0
+    rol
+    sta dest
 }
 
 //---------------------------------------------------------------
