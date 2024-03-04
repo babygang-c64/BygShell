@@ -42,6 +42,11 @@ swap r<n>, r<m> : swap registers
 ```
 stc <address> : store carry as 1 or 0 to address
 ```
+**Swi**
+```
+swi <bios_function>         : calls bios function
+swi <bios_function>, <addr> : calls bios function with r0 = addr 
+```
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max

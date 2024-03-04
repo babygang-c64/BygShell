@@ -139,10 +139,24 @@ for line in hin:
             print(ptype1, pval1)
             print('error', line)
             input('wait')
+
+    # STC
+
     elif instruction == 'stc':
         newline = 'stc(' + elems[1] + ')'
         hout.write(newline + '\n')
         print('stc = %s' % newline)
+    
+    # SWI
+    
+    elif instruction == 'swi':
+        ptype0, pval0 = param_type(elems[1])
+        if len(elems) == 2:
+            newline = 'bios(bios.' + pval0 + ')'
+        else:
+            ptype1, pval1 = param_type(elems[3])
+            newline = 'call_bios(bios.' + pval0 + ', ' + pval1 + ')'
+        hout.write(newline + '\n')
     else:
         hout.write(line)
 

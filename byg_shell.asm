@@ -1549,7 +1549,7 @@ toplevel:
     // affiche le prompt
     call_bios(bios.getvar, varprompt)
     mov r0, r1
-    bios(bios.pprint)
+    swi pprint
 
     // si on dépasse le max historique : supprime 1 enreg
     jsr check_history
