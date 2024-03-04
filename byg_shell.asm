@@ -1545,6 +1545,7 @@ pas_copie_history:
 }
 
 toplevel:
+
     // affiche le prompt
     call_bios(bios.getvar, varprompt)
     mov r0, r1

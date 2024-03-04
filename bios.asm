@@ -52,6 +52,7 @@
 .label str_chr=36
 .label str_lstrip=37
 .label str_len=38
+.label str_del=39
 
 bios_jmp:
     .word do_reset
@@ -93,6 +94,7 @@ bios_jmp:
     .word do_str_chr
     .word do_str_lstrip
     .word do_str_len
+    .word do_str_del
 
 * = * "BIOS code"
 
@@ -2208,6 +2210,57 @@ copie:
     clc
     adc #1
     rts
+}
+
+//---------------------------------------------------------------
+// str_del : supprime X caractères à partir de la position Y
+// entrée : R0 = pstring
+// todo : contrôle erreurs / dépassements
+//---------------------------------------------------------------
+
+do_str_del:
+{
+    // 0 123456789 : 3, 4 -> 0 123 4567 89 -> 0 12389
+    // début Y+1
+    stx nb_supp
+    iny
+    sty pos_ecriture
+    tya
+    clc
+    adc nb_supp
+    sta pos_lecture
+    
+    bios(bios.str_len)
+    sec
+    sbc pos_ecriture
+    sbc nb_supp
+    tax
+
+copie:
+    ldy pos_lecture
+    mov a, (r0)
+    ldy pos_ecriture
+    mov (r0), a
+    inc pos_ecriture
+    inc pos_lecture
+    dex
+    bpl copie
+
+    // maj longueur
+    ldy #0
+    mov a, (r0)
+    sec
+    sbc nb_supp
+    mov (r0), a    
+    clc
+    rts
+
+nb_supp:
+    .byte 0
+pos_lecture:
+    .byte 0
+pos_ecriture:
+    .byte 0
 }
 
 //---------------------------------------------------------------
