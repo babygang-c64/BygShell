@@ -173,6 +173,7 @@ filename:
 }
 
 //---------------------------------------------------------------
+// getbyte(reg)   : A = byte(reg)
 // getbyte_r(reg) : A = byte(reg), reg++
 // Y should be 0
 // devrait être getnextbyte / getbyte
@@ -186,6 +187,11 @@ filename:
     bne pas_inc
     inc zr0h+2*reg
 pas_inc:
+}
+
+.macro getbyte(reg)
+{
+    lda (zr0+2*reg),y
 }
 
 //---------------------------------------------------------------

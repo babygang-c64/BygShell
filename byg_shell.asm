@@ -430,9 +430,7 @@ copie_fichier:
     ldx #2
     clc
     call_bios(bios.read_buffer, work_buffer)
-    lda #0
-    rol
-    sta copie_finie
+    stc copie_finie
     ldx #3
     call_bios(bios.write_buffer, work_buffer)
     lda copie_finie
@@ -614,6 +612,7 @@ msg_suite:
 //----------------------------------------------------
 // cmd_input : saisie utilisateur, stockage dans
 // la variable indiquée en paramètre
+// input [invite] <variable>
 //----------------------------------------------------
 
 cmd_input:
@@ -624,17 +623,16 @@ cmd_input:
     mov r1, r0
     lda parameters.list
     cmp #3
-    bne pas_texte
+    bne pas_texte_invite
 
     bios(bios.pprint)
     ldx #2
     call_bios(bios.list_get, parameters.list)
     mov r1, r0
-pas_texte:
+
+pas_texte_invite:
     bios(bios.input)
-    //bios(bios.pprintnl)
     swap r0, r1
-    //bios(bios.pprintnl)
     bios(bios.setvar)
     clc
     rts
@@ -873,8 +871,7 @@ pas_de_device:
     lda avec_sep
     ror
     call_bios(bios.build_path, work_buffer)
-    //call_bios(bios.print_path, work_path)
-    //call_bios(bios.pprintnl, work_buffer)
+
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
@@ -882,10 +879,10 @@ pas_de_device:
 
     mov r0, work_buffer2
     pop r1
-    jsr bios.do_str_cat
+    bios(bios.str_cat)
 
     mov r1, work_buffer
-    jsr bios.do_str_cat
+    bios(bios.str_cat)
 
     //call_bios(bios.pprintnl, work_buffer2)
 
@@ -933,7 +930,9 @@ do_get_options:
     // utilise r2 au lieu de r0 pour conserver r0
     mov r2, r0
     ldy #0
-    getbyte_r(2)
+    sty options
+
+    mov a, (r2++)
     beq pas_options
 
     // si options présentes = il y en a lgr - 1
@@ -943,29 +942,24 @@ do_get_options:
 
     // vérifie la syntaxe
     ldy #0
-    getbyte_r(2)
+    mov a, (r2++)
     cmp #'-'
     bne pas_options
 
-    lda #0
-    sta options
     // parcours de r0, recherche si option dans r1
     // si pas dans r1 = erreur, si dans r1 ajoute option
 
     // nb_options_total = nb d'options dans la liste des options
     // zr1 pointe sur le débute de la liste des options
-    ldy #0
-    getbyte_r(1)
+    
+    mov a, (r1++)
     sta nb_options_total
     
-.print "nb_options=$"+toHexString(nb_options)
-.print "nb_options_total=$"+toHexString(nb_options_total)
-.print "options=$"+toHexString(options)
     // teste chaque option de zr2 : si trouvé ajoute aux
     // options, si non trouvé = erreur d'option
 next_option:
     ldy #0
-    getbyte_r(2)
+    mov a, (r2++)
 
     ldy #0
 test_tout:
@@ -1007,9 +1001,16 @@ nb_options:
     .byte 0
 nb_options_total:
     .byte 0
+
+.print "nb_options=$"+toHexString(nb_options)
+.print "nb_options_total=$"+toHexString(nb_options_total)
+.print "options=$"+toHexString(options)
 }
 
-// positionne le bit Y à 1 dans A
+//----------------------------------------------------
+// set_bit : positionne le bit Y à 1 dans A
+//----------------------------------------------------
+
 set_bit:
 {
     ora bit_list,y

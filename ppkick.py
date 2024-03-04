@@ -77,11 +77,17 @@ for line in hin:
         #print("param 2 %s [%s]" % (ptype1, pval1))
         if ptype0 != 'a' and ptype1 != 'a':
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
-        elif ptype0 == 'a':
-            newline = 'st_' + ptype0 + ptype1 + '(' + pval1 + ')'
+        #elif ptype0 == 'a':
+        #    newline = 'st_' + ptype0 + ptype1 + '(' + pval1 + ')'
         elif ptype1 == 'a':
             # mov a, r<num> -> st_ar(<num>)
             newline = 'st_' + ptype1 + ptype0 + '(' + pval0 + ')'
+        elif ptype0 == 'a' and ptype1 in ['s', 'si']:
+            # mov a,(r0) / mov a,(r0++)
+            newline = 'getbyte'
+            if ptype1 == 'si':
+                newline += '_r'
+            newline += '(' + pval1 + ')'
         else:
             # mov r<num>, a -> 
             newline = 'st_' + ptype0 + ptype1 + '(' + pval0 + ', ' + pval1 + ')'

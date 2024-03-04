@@ -384,7 +384,7 @@ do_str2int:
     ldy #0
     sty zr1l
     sty zr1h
-    getbyte_r(0)
+    mov a, (r0++)
     sta lgr_str
     cmp #0
     bne next_char
@@ -393,7 +393,7 @@ do_str2int:
     clc
     rts
 next_char:
-    getbyte_r(0)
+    mov a, (r0++)
     cmp #$30
     bmi pas_int
     cmp #$39
@@ -2765,9 +2765,7 @@ is_digit:
 
 do_lsblk:
 {
-    lda #0
-    rol
-    sta affichage_lecteurs
+    stc affichage_lecteurs
 
     //-- raz liste et nb de devices
     ldy #31
@@ -3240,9 +3238,7 @@ pos_lecture:
 
 do_read_buffer:
 {
-    lda #0
-    rol
-    sta lecture_ligne
+    stc lecture_ligne
     jsr CHKIN
 
     lda #0
@@ -3311,9 +3307,7 @@ nb_lu:
 //    pstring("NOM=[%P5]")
 do_file_open:
 {
-    lda #0
-    rol
-    sta read_write
+    stc read_write
     stx canal
     push r0
     //str_r(5, 0)
