@@ -14,7 +14,7 @@ zr0h to zr1h : higher bytes of registers
 ### macro instructions with pre-processor for 16 bit registers
 
 **Mov**
-
+```
 mov r<n>, r<m>      : register n = register m
 mov r<n>, <addr>    : register n = address
 mov a, (r<n>)       : a = byte at register n address
@@ -23,25 +23,25 @@ mov (r<n>), a       : store a at register n address
 mov (r<n>++),a      : store a at register n address, increment register
 mov (r<n>), r<m>    : store register m at address in register n
 mov r<n>, (r<m>)    : store value at address in register m
-
+```
 **Add**
-
+```
 add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
 add r<n>, a         : add a to register n
-
+```
 **Inc, Dec**
-
+```
 inc r<n> : increment register
 dec r<n> : decrement register
-
+```
 **Swap**
-
+```
 swap r<n>, r<m> : swap registers
-
+```
 **Stc**
-
+```
 stc <address> : store carry as 1 or 0 to address
-
+```
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max
@@ -66,13 +66,13 @@ related BIOS operations :
 
 **str_expand** : pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
-
+```
         %% = %
         %R<n> = hex value of register R<n>
         %P<n> = pstring value at address of register R<n>
         %V<variable>% = pstring value stored for system variable with name <variable>
         %C<hexcolor> = insert character to change color to <hexcolor> (hex nibble)
-    
+```    
     On exit : C=1 if error, C=0 if OK
 
 **str_cmp** : compare pstring(r0) and pstring(r1)
