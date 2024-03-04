@@ -195,6 +195,7 @@ pas_inc:
 }
 
 //---------------------------------------------------------------
+// setbyte(reg)   : byte(reg) = A
 // setbyte_r(reg) : byte(reg) = A, reg++
 // Y should be 0
 // devrait être setbyte / setnextbyte
@@ -208,6 +209,11 @@ pas_inc:
     bne pas_inc
     inc zr0h+2*reg
 pas_inc:
+}
+
+.macro setbyte(reg)
+{
+    sta (zr0+2*reg),y
 }
 
 //---------------------------------------------------------------
