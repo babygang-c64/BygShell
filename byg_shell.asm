@@ -141,9 +141,9 @@ cmd_echo:
     sta pos_param
 boucle_params:
     ldx pos_param
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     
-    jsr bios.do_pprint
+    swi pprint
     inc pos_param
     dec nb_parameters
     beq sans_param
@@ -1244,7 +1244,7 @@ blocs:
     sta zr0h
     lda #%11111111
     jsr bios.do_print_int
-    call_bios(bios.pprintnl, blocksfree)
+    swi pprintnl, blocksfree
 
 pas_aff_blocs_free:
     jmp next
@@ -1270,7 +1270,7 @@ pas_blocs:
     bne filtre_ko
 
 pas_filtre_dir:
-    call_bios(bios.pprint, dir_entry.type)
+    swi pprint, dir_entry.type
 suite_filtre_dir:
 
     // taille fichier
@@ -1288,7 +1288,7 @@ pas_ft_size:
     and #FT_SIZE
     beq pas_ft_size_name
 
-    call_bios(bios.pprintnl, dir_entry.filename)
+    swi pprintnl, dir_entry.filename
     lda #5
     sta 646
 filtre_ko:
@@ -1322,7 +1322,7 @@ exit:
 pas_impair:
 
     ldx #2
-    bios(bios.file_close)
+    swi file_close
     rts
 
     // print_name_no_size : affichage nom sans taille
@@ -1334,7 +1334,7 @@ print_name_no_size:
     //call_bios(bios.filter, filtre)
     //bcs no_print2
     jsr set_dir_color
-    call_bios(bios.pprint, dir_entry.filename)
+    swi pprint, dir_entry.filename
     lda #5
     sta 646
 //no_print2:
@@ -1529,15 +1529,15 @@ pas_max:
 
 add_history:
 {
-    ldy #0
-    lda (zr0),y
+    swi str_len
     beq pas_copie_history
+
     mov r1, history_kw
-    bios(bios.str_cmp)
+    swi str_cmp
     bcs pas_copie_history
 
     mov r1, r0
-    call_bios(bios.list_add, history_list)
+    swi list_add, history_list
     inc nb_history
 
 pas_copie_history:
@@ -1547,7 +1547,7 @@ pas_copie_history:
 toplevel:
 
     // affiche le prompt
-    call_bios(bios.getvar, varprompt)
+    swi getvar, varprompt
     mov r0, r1
     swi pprint
 
@@ -1555,7 +1555,7 @@ toplevel:
     jsr check_history
 
     // lecture de la commande, retour en r0 = input_buffer
-    bios(bios.input)
+    swi input
     
     // ajout à l'historique
     jsr add_history
@@ -1578,7 +1578,7 @@ command_process:
 
 non_vide:
     ldx #0
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     jsr bios.lookup_cmd
     bcc non_trouve
 
@@ -1589,7 +1589,7 @@ non_vide:
 non_trouve:
 
     ldx #'.'
-    bios(bios.str_chr)
+    swi str_chr
     bcc is_binary
 
     iny
@@ -1604,7 +1604,7 @@ non_trouve:
     jmp script_execute
 
 pas_script:
-    call_bios(bios.error, msg_error.command_not_found)
+    swi error, msg_error.command_not_found
     rts
 
 is_binary:
@@ -1613,10 +1613,7 @@ is_binary:
 
 command_execute:
 {
-    lda zr1l
-    sta jmp_cmd
-    lda zr1h
-    sta jmp_cmd+1
+    mov jmp_cmd, r1
     jmp jmp_cmd:$fce2
 }
 
@@ -1625,17 +1622,17 @@ script_execute:
     // ouverture en lecture, nom dans r0
     ldx #7
     clc
-    bios(bios.file_open)
+    swi file_open
     bcc next_line
     jmp error
 next_line:
     ldx #7
     sec
-    call_bios(bios.read_buffer, input_buffer)
+    swi read_buffer, input_buffer
     bcs fini
 
     // si ligne vide, empty ou commence par # = ignore
-    bios(bios.str_empty)
+    swi str_empty
     bcc next_line
     ldy #1
     lda (zr0),y
@@ -1650,12 +1647,12 @@ next_line:
     jmp next_line
 fini:
     ldx #7
-    bios(bios.file_close)
+    swi file_close
     clc
     rts
 error:
     jsr fini
-    call_bios(bios.error, msg_error.command_not_found)
+    swi error, msg_error.command_not_found
     rts
 }
 
