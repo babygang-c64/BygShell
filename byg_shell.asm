@@ -1177,9 +1177,9 @@ pas_de_parametres:
 
     // si filtre en paramètre, copie le 
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     mov r1, filtre
-    bios(bios.str_copy)
+    swi str_copy
 
 pas_filtre:
     lda #0
@@ -1199,7 +1199,7 @@ pas_option_L:
     // ouverture $
     ldx #2
     clc
-    call_bios(bios.file_open, dirname)
+    swi file_open, dirname
     ldx #2
     jsr CHKIN
 
@@ -1210,10 +1210,10 @@ do_dir:
     lda format
     and #FT_DISKNAME
     beq not_ft_diskname
-    call_bios(bios.pprint, dir_entry.filename)
+    swi pprint, dir_entry.filename
     lda #32
     jsr CHROUT
-    call_bios(bios.pprintnl, dir_entry.type)
+    swi pprintnl, dir_entry.type
 
 not_ft_diskname:
 next:
