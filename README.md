@@ -5,25 +5,49 @@ Shell like commands for the C64
 
 ### 16 bit registers
 
-8 x 16bit registers (R0 to R7) are reserved on ZP starting at address $39
+8 x 16bit registers (R0 to R7) are stored on ZP starting at address $39
 They are referenced with the following pre-defined labels :
 zr0 to zr1 : base address of registers
 zr0l to zr1l : lower bytes of registers
 zr0h to zr1h : higher bytes of registers
 
-## macros with pre-processor for 16 bit registers
+### macro instructions with pre-processor for 16 bit registers
 
-mov r<n>, r<m>
-mov r<n>, <addr>
-inc r<n>
-dec r<n>
+**Mov**
+
+mov r<n>, r<m>      : register n = register m
+mov r<n>, <addr>    : register n = address
+mov a, (r<n>)       : a = byte at register n address
+mov a, (r<n>++)     : a = byte at register n address, increment register
+mov (r<n>), a       : store a at register n address
+mov (r<n>++),a      : store a at register n address, increment register
+mov (r<n>), r<m>    : store register m at address in register n
+mov r<n>, (r<m>)    : store value at address in register m
+
+**Add**
+
+add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
+add r<n>, a         : add a to register n
+
+**Inc, Dec**
+
+inc r<n> : increment register
+dec r<n> : decrement register
+
+**Swap**
+
+swap r<n>, r<m> : swap registers
+
+**Stc**
+
+stc <address> : store carry as 1 or 0 to address
 
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max
 254 characters
 
-related macros :
+related macro :
 
 **pstring("STRING VALUE")**
 
@@ -35,7 +59,7 @@ related BIOS operations :
     C(arry)=0 if string is empty (zero length or spaces)
     C=1 if string is not empty
 
-**add_str** : pstring(r0) += pstring(r1)
+**str_cat** : pstring(r0) += pstring(r1)
 
 **str_copy** : pstring(r1) = pstring(r0)
     return A = total copied bytes (R0 pstring length + 1)
@@ -51,7 +75,7 @@ related BIOS operations :
     
     On exit : C=1 if error, C=0 if OK
 
-**compare_str** : compare pstring(r0) and pstring(r1)
+**str_cmp** : compare pstring(r0) and pstring(r1)
 
     On exit : C=1 if equals, C=0 otherwise
 
