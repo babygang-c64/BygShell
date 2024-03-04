@@ -25,7 +25,7 @@
 .label list_get=9
 .label file_load=10
 .label set_device=11
-.label add_str=12
+.label str_cat=12
 .label str_copy=13
 .label list_rm=14
 .label list_print=15
@@ -64,7 +64,7 @@ bios_jmp:
     .word do_list_get
     .word do_file_load
     .word do_set_device
-    .word do_add_str
+    .word do_str_cat
     .word do_str_copy
     .word do_list_rm
     .word do_list_print
@@ -621,11 +621,12 @@ text_device:
 }
 
 //---------------------------------------------------------------
-// add_str : ajoute une chaine
+// str_cat : ajoute une chaine
 // r0 = r0 + r1
+// sortie Y = 0
 //---------------------------------------------------------------
 
-do_add_str:
+do_str_cat:
 {
     // pos_new = écriture = lgr + 1
     ldy #0    
@@ -669,53 +670,6 @@ lgr_ajout:
 }
 
 //---------------------------------------------------------------
-// str_cat : zdest += zsrc
-//---------------------------------------------------------------
-
-do_str_cat:
-{
-    // pos_new = écriture = lgr + 1
-    ldy #0    
-    lda (zdest),y
-    tay
-    iny
-    sty pos_new
-
-    // pos_copie = lecture = 1
-    // lgr_ajout = nb de caractères à copier
-    ldy #0
-    lda (zsrc),y
-    sta lgr_ajout
-    iny
-    sty pos_copie
-
-copie:
-    ldy pos_copie
-    lda (zsrc),y
-    ldy pos_new
-    sta (zdest),y
-    inc pos_new
-    inc pos_copie
-    dec lgr_ajout
-    bne copie
-
-    // mise à jour longueur = position écriture suivante - 1
-    dec pos_new
-    lda pos_new
-    ldy #0
-    sta (zdest),y
-    clc
-    rts
-
-pos_copie:
-    .byte 0
-pos_new:
-    .byte 0
-lgr_ajout:
-    .byte 0
-}
-
-//---------------------------------------------------------------
 // file_load : charge un fichier et execute code en $080d
 // r0 = nom fichier A = présence séparateur
 //---------------------------------------------------------------
@@ -739,7 +693,7 @@ do_file_load:
 
     mov r0, work_buffer
     mov r1, r2
-    jsr bios.do_add_str
+    jsr bios.do_str_cat
     
     mov r0, work_buffer
     jsr test_load
@@ -3426,60 +3380,58 @@ canal:
 // build_path : construction path cible
 // entrée : r0 = adresse pstring résultat
 // r1 = ppath source
-// si C=0 ajout :, si C=1 pas d'ajout
+// si C=0 ajout :, si C=1 pas d'ajout séparateur ":"
 // sortie = r0 à jour = path:nom
 //----------------------------------------------------
 
 do_build_path:
 {
-    lda #0
-    rol
-    sta pas_ajout
+    stc pas_ajout
 
-    // raz dest
+    mov rsrc, r1
     mov rdest, r0
+    
+    // raz dest
     ldy #0
     tya
-    sta (zdest),y
+    sta (zr0),y
 
-    ldy #0
     lda (zr1),y
+    sta options_path
     and #PPATH.WITH_PATH
     beq pas_path
 
-    mov rsrc, r1
-    lda #3
-    add rsrc, a
-
+    // ajout PATH
+    add r1, #3
     jsr do_str_cat
 
 pas_path:
-
-    ldy #0
-    lda (zr1),y
+    lda options_path
     and #PPATH.WITH_NAME
     beq pas_name
 
+    // ajout NAME, avec séparateur si demandé
     lda pas_ajout
     bne pas_ajout_sep
 
-    mov rsrc, msg_sep
+    mov r1, msg_sep
     jsr do_str_cat
+
+
 pas_ajout_sep:
-
-    mov rsrc, r1
-    lda #3
-    add rsrc, a
-    lda (zsrc),y
-    add rsrc, a
-    inc rsrc
-
+    mov r1, rsrc
+    add r1, #3
+    lda (zr1),y
+    add r1, a
+    inc r1
     jsr do_str_cat
 
 pas_name:
     clc
     rts
 
+options_path:
+    .byte 0
 pas_ajout:
     .byte 0
 msg_sep:

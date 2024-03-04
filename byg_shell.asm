@@ -405,7 +405,7 @@ cmd_cp:
 
     mov r0, work_buffer2
     mov r1, write_str
-    bios(bios.add_str)
+    bios(bios.str_cat)
     //call_bios(bios.pprintnl, work_buffer2)
 
     // open fichier en sortie
@@ -880,11 +880,11 @@ pas_de_device:
     ldy #0
     sty work_buffer2
 
-    mov rdest, work_buffer2
-    pop rsrc
+    mov r0, work_buffer2
+    pop r1
     jsr bios.do_str_cat
 
-    mov rsrc, work_buffer
+    mov r1, work_buffer
     jsr bios.do_str_cat
 
     //call_bios(bios.pprintnl, work_buffer2)
@@ -1955,8 +1955,7 @@ cmd_save_env:
     call_bios(bios.build_path, work_buffer)
     mov r0, work_buffer
     mov r1, cmd_cp.write_str
-    bios(bios.add_str)
-
+    bios(bios.str_cat)
 
     sec
     ldx #3
@@ -2075,6 +2074,7 @@ cmd_help:
     mov r1, work_buffer
     call_bios(bios.str_expand, help_location)
     mov r0, r1
+    //bios(bios.pprintnl)
     lda bios.device
     sta bios.save_device
     lda #do_cat.OPT_P

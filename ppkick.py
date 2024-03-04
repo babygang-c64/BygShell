@@ -45,6 +45,7 @@ def param_type(param):
 
     return ptype, pval
 
+
 if len(sys.argv) != 3:
     print('ppkick <filein> <fileout>')
     quit()
@@ -66,6 +67,8 @@ for line in hin:
     else:
         instruction = ''
 
+    # MOV
+
     if instruction == 'mov':
         #print(elems, len(elems))
         ptype0, pval0 = param_type(elems[1])
@@ -84,6 +87,9 @@ for line in hin:
             newline = 'st_' + ptype0 + ptype1 + '(' + pval0 + ', ' + pval1 + ')'
         #print('new [%s]' % newline)
         hout.write(newline + '\n')
+
+    # PUSH, POP, INC, DEC
+
     elif instruction in ['push', 'pop', 'inc', 'dec']:
         ptype0, pval0 = param_type(elems[1])
         if ptype0 == 'r':
@@ -91,6 +97,9 @@ for line in hin:
         else:
             newline = line
         hout.write(newline + '\n')
+
+    # ADD
+
     elif instruction == 'add':
         ptype0, pval0 = param_type(elems[1])
         ptype1, pval1 = param_type(elems[3])
@@ -109,6 +118,9 @@ for line in hin:
             print(ptype1, pval1)
             print('error', line)
             input('wait')
+
+    # SWAP 
+
     elif instruction == 'swap':
         ptype0, pval0 = param_type(elems[1])
         ptype1, pval1 = param_type(elems[3])
