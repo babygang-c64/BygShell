@@ -3165,20 +3165,24 @@ fin_lecture:
 //----------------------------------------------------
 // str_empty : teste si la chaine en r0 est vide
 // retour C=0 si vide, C=1 si non vide
+// caractères "vides" = espace / tab / espace shifté
 //----------------------------------------------------
 
 do_str_empty:
 {
     ldy #0
-    lda (zr0),y
+    mov a, (r0)
     sta lgr_chaine
     beq est_vide
+
 test_vide:
     iny
-    lda (zr0),y
+    mov a, (r0)
     cmp #32
     beq suite_test_vide
     cmp #9
+    beq suite_test_vide
+    cmp #160
     beq suite_test_vide
     bne non_vide
 
@@ -3388,16 +3392,16 @@ do_build_path:
     // raz dest
     ldy #0
     tya
-    sta (zr0),y
+    mov (r0), a
 
-    lda (zr1),y
+    mov a, (r1)
     sta options_path
     and #PPATH.WITH_PATH
     beq pas_path
 
     // ajout PATH
     add r1, #3
-    jsr do_str_cat
+    bios(bios.str_cat)
 
 pas_path:
     lda options_path
@@ -3409,16 +3413,15 @@ pas_path:
     bne pas_ajout_sep
 
     mov r1, msg_sep
-    jsr do_str_cat
-
+    bios(bios.str_cat)
 
 pas_ajout_sep:
     mov r1, rsrc
     add r1, #3
-    lda (zr1),y
+    mov a, (r1)
     add r1, a
     inc r1
-    jsr do_str_cat
+    bios(bios.str_cat)
 
 pas_name:
     clc
@@ -3456,9 +3459,9 @@ do_get_device_status:
     bne devnp       // device not present
 
     lda bios.device
-    jsr $FFB4     // call TALK
+    jsr TALK
     lda #$6F      // secondary address 15 (error channel)
-    jsr $FF96     // call SECTLK (TKSA)
+    jsr TKSA
 
     jsr IECIN     // call IECIN (get byte from IEC bus)
     sta code_status+1
