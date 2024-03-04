@@ -45,7 +45,7 @@ stc <address> : store carry as 1 or 0 to address
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max
-254 characters
+255 characters
 
 related macro :
 
