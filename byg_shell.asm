@@ -293,7 +293,7 @@ cmd_set:
     swi list_get, parameters.list
     lda #'='
     jsr extract_cmd
-    jsr bios.do_setvar
+    swi var_set
     clc
     rts
 }
@@ -325,8 +325,7 @@ change:
     lda bios.device
     sta prev_device
 
-    mov r0, #device_var
-    jsr bios.do_setvar
+    swi var_set, device_var
     jsr bios.do_set_device
     bcs pb_device
     clc
@@ -633,7 +632,7 @@ cmd_input:
 pas_texte_invite:
     swi input
     swap r0, r1
-    swi setvar
+    swi var_set
     clc
     rts
 }
@@ -644,13 +643,13 @@ pas_texte_invite:
 
 cmd_filter:
 {
-    call_bios(bios.getvar, var_test)
+    swi var_get, var_test
     mov r2, r1
-    call_bios(bios.getvar, var_pattern)
+    swi var_get,var_pattern
     mov r0, r2
     bios(bios.filter)
     bcc no_match
-    call_bios(bios.pprintnl, msg_match)
+    swi pprintnl, msg_match
 no_match:
     clc
     rts
@@ -1544,7 +1543,7 @@ pas_copie_history:
 
 toplevel:
     // affiche le prompt
-    swi getvar, varprompt
+    swi var_get, varprompt
     mov r0, r1
     swi pprint
 

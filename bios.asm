@@ -16,9 +16,9 @@
 .label reset=0
 .label pprint=1
 .label pprintnl=2
-.label setvar=3
-.label getvar=4
-.label rmvar=5
+.label var_set=3
+.label var_get=4
+.label var_del=5
 .label input=6
 .label count_vars=7
 .label list_add=8
@@ -59,9 +59,9 @@ bios_jmp:
     .word do_reset
     .word do_pprint
     .word do_pprintnl
-    .word do_setvar
-    .word do_getvar
-    .word do_rmvar
+    .word do_var_set
+    .word do_var_get
+    .word do_var_del
     .word do_input
     .word do_count_vars
     .word do_list_add
@@ -514,7 +514,7 @@ do_set_device_from_int:
 
     // remplace la variable DEVICE
     mov r1, r0
-    swi setvar, do_set_device.text_device
+    swi var_set, do_set_device.text_device
     pop r0
     lda device_tmp
     jmp do_set_device.set_device
@@ -531,7 +531,7 @@ device_tmp:
 do_set_device:
 {
     // lecture variable device
-    swi getvar, text_device
+    swi var_get, text_device
     mov r0, r1
     jsr do_str2int
     // si pas int, no device
@@ -621,7 +621,7 @@ do_file_load:
 
     // test avec PATH + NOM
 
-    swi getvar, text_path
+    swi var_get, text_path
     mov r0, r1
     mov r1, #work_buffer
     // 0 : dest = work buffer, 1 = path, 2 = filename
@@ -873,7 +873,7 @@ fin_get_trouve:
 
 fin_get_non_trouve:
     sec
-    mov r0, #do_getvar.msg_pas_var
+    mov r0, #do_var_get.msg_pas_var
     ldx pos_elem
     rts
 
@@ -1592,8 +1592,7 @@ fin_copie_nom:
     // la valeur
 
     push r0
-    mov r0, #work_name
-    jsr do_getvar
+    swi var_get, work_name
     mov r2, r1
     pop r0
     pop r1
@@ -1792,12 +1791,12 @@ do_pprinthex8a:
 .print "do_pprinthex=$"+toHexString(do_pprinthex)
 
 //---------------------------------------------------------------
-// getvar : lecture variable
+// var_get : lecture variable
 // r0 : nom variable -> r1 : contenu et C = 1
 // pas trouvé => C = 0 et contenu = NIL
 //---------------------------------------------------------------
 
-do_getvar:
+do_var_get:
 {
     jsr lookup_var
     bcc pas_var
@@ -1814,11 +1813,11 @@ msg_pas_var:
 }
 
 //---------------------------------------------------------------
-// setvar : crée une variable, affecte une valeur
+// var_set : crée une variable, affecte une valeur
 // r0 : nom variable, r1 : nouveau contenu
 //---------------------------------------------------------------
 
-do_setvar:
+do_var_set:
 {
     // sauvegarde r0 nom dans rsrc et r1 valeur dans rdest
     mov rsrc, r0
@@ -1866,10 +1865,10 @@ pas_creation:
     mov r0, rdest
     swi str_copy
     pla
-    jsr do_rmvar
+    jsr do_var_del
     mov r0, rsrc
     mov r1, #work_buffer
-    jmp do_setvar
+    jmp do_var_set
 }
 
 .print "ptr_last_variable=$"+toHexString(ptr_last_variable)
@@ -1880,11 +1879,11 @@ pas_creation:
 .print "var_values=$"+toHexString(var_values)
 
 //---------------------------------------------------------------
-// do_rmvar : supprime une variable
+// do_var_del : supprime une variable
 // A = numéro variable à supprimer
 //---------------------------------------------------------------
 
-do_rmvar:
+do_var_del:
 {
     sta to_supp
 
@@ -2005,7 +2004,7 @@ nb_to_copy:
     .byte 0
 }
 
-.print "do_rmvar=$"+toHexString(do_rmvar)
+.print "do_var_del=$"+toHexString(do_var_del)
 
 //---------------------------------------------------------------
 // lookup_var : teste si une variable existe,
