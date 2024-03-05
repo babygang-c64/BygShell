@@ -90,22 +90,33 @@ related BIOS operations :
 
     On exit : C=1 if equals, C=0 otherwise
 
+**str_del** : remove Y characters of pstring r0, starting at X
+
+**str_ins** : insert pstring(r1) at position X of pstring(r0)
+
+    pstring(r0) string size should be big enough
+
+**str_chr** : find position of character X in pstring(r0)
+
+    On exit : C=1 if found, Y = position
+
+**str_lstrip** : suppress spaces on left side of pstring(r0)
+
+**str_len** : return length of pstring(r0) into A
+
 ### system variables
 
 A pool of <name> / <pstring value> variables is maintained.
 
 related BIOS operations :
 
-**setvar** : variable with name in R0 = pstring R1
-**getvar** : R1 = value of variable with name in R0 
+**var_set** : variable with name in R0 = pstring R1
+
+**var_get** : R1 = value of variable with name in R0 
 
     On exit : C=1 variable found, C=0 variable not found
 
-**lookup_var** : lookup variable #,
-
-    On exit : A = variable #, C=1, R1=value if found, C=0 otherwise
-
-**rmvar** : deletes variable #A
+**var_del** : deletes variable #A
 
 Helper BIOS functions :
 
