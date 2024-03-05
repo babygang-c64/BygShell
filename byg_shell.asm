@@ -1543,7 +1543,6 @@ pas_copie_history:
 }
 
 toplevel:
-
     // affiche le prompt
     swi getvar, varprompt
     mov r0, r1

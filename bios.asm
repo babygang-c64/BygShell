@@ -2139,37 +2139,38 @@ copie:
 
 do_str_ins:
 {
-    // 0 12 DEFG 3456789
-    // 0 12 3456 789ABCD
-    // 3 "DEFG"
     // 1. décale la fin de chaine pour faire de la place
-    // lecture : X, lgr r1, écriture : x+lgr r1
     // 2. copie r1 en position X
     // 3. mise à jour lgr = +lgr r1
 
-    stx pos_lecture
     stx pos_copie
+    swi str_len
+    sta pos_lecture
     push r0
     mov r0, r1
     swi str_len
     sta lgr_r1
-    tax
-    clc
-    adc pos_lecture
-    sta pos_ecriture
     pop r0
+    lda pos_lecture
+    clc
+    adc lgr_r1
+    sta pos_ecriture
+    lda pos_lecture
+    sec
+    sbc pos_copie
+    tax
+    lda #1
+    sta pos_lecture_copie
 
 decale:
     ldy pos_lecture
     mov a, (r0)
     ldy pos_ecriture
     mov (r0), a
-    inc pos_lecture
-    inc pos_ecriture
+    dec pos_lecture
+    dec pos_ecriture
     dex
-    bne decale
-    inx
-    stx pos_lecture_copie
+    bpl decale
 
     ldx lgr_r1
 copie:
