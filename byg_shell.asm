@@ -975,7 +975,7 @@ test_tout:
 trouve:
     // trouve : enregistre et passe à la suivante
     lda options
-    jsr set_bit
+    jsr bios.set_bit
     sta options
 
     // boucle si il reste des options en entrée à tester
@@ -1008,19 +1008,6 @@ nb_options_total:
 .print "nb_options_total=$"+toHexString(nb_options_total)
 .print "options=$"+toHexString(options)
 }
-
-//----------------------------------------------------
-// set_bit : positionne le bit Y à 1 dans A
-//----------------------------------------------------
-
-set_bit:
-{
-    ora bit_list,y
-    rts
-bit_list:
-    .byte 1,2,4,8,16,32,64,128
-}
-
 
 //----------------------------------------------------
 // cmd_mkdir : crée un répertoire
