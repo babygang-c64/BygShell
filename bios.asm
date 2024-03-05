@@ -20,7 +20,7 @@
 .label var_get=4
 .label var_del=5
 .label input=6
-.label count_vars=7
+.label var_count=7
 .label list_add=8
 .label list_get=9
 .label file_load=10
@@ -63,7 +63,7 @@ bios_jmp:
     .word do_var_get
     .word do_var_del
     .word do_input
-    .word do_count_vars
+    .word do_var_count
     .word do_list_add
     .word do_list_get
     .word do_file_load
@@ -140,9 +140,9 @@ do_reset:
     jsr CLEARSCREEN
 
     // lookup how many variables and commands are available at startup
-    swi count_vars, var_names
+    swi var_count, var_names
     sta nb_variables
-    swi count_vars, internal_commands
+    swi var_count, internal_commands
     sta nb_cmd
 
     // print banner
@@ -371,12 +371,12 @@ lgr_str:
 }
 
 //----------------------------------------------------
-// do_count_vars : compte le nombre de variables ou de
+// do_var_count : compte le nombre de variables ou de
 // commandes dispos, en entrée r0 = source
 // en sortie : A = nb variables
 //----------------------------------------------------
 
-do_count_vars:
+do_var_count:
 {
     ldy #0
     sty nb_variables

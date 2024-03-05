@@ -198,7 +198,7 @@ cmd_dump:
     lda type_dump
     beq dump_env
 
-    swi count_vars, internal_commands
+    swi var_count, internal_commands
     sta parcours_variables
     cmp #0
     bne dump_cmd
@@ -209,7 +209,7 @@ dump_cmd:
     jmp boucle_dump
 
 dump_env:
-    swi count_vars, var_names
+    swi var_count, var_names
     sta parcours_variables
     cmp #0
     beq fin_dump
@@ -1957,7 +1957,7 @@ cmd_save_env:
     jmp erreur_open
 
 ok_open:
-    swi count_vars, var_names
+    swi var_count, var_names
     sta parcours_variables
     cmp #0
     bne ok_dump
