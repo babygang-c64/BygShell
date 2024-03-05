@@ -27,6 +27,9 @@ mov r<n>, (r<m>)    : store value at address in register m
 mov <addr>, <addr2> : copy word at addr2 to addr
 mov <addr>, #<val>  : copy value to addr
 ```
+
+Warning : indirect MOV operations rely on Y beeing set to 0, if not then Y will be added to address
+
 **Add**
 ```
 add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
@@ -47,8 +50,8 @@ stc <address> : store carry as 1 or 0 to address
 ```
 **Swi**
 ```
-swi <bios_function>         : calls bios function
-swi <bios_function>, <addr> : calls bios function with r0 = addr 
+swi <bios_function>                    : calls bios function
+swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 = addr2
 ```
 ### pStrings
 
