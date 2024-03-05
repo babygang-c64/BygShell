@@ -36,7 +36,7 @@
 .label prep_path=20
 .label lsblk=21
 .label pprinthex=22
-.label pprinthex8a=23
+.label pprinthex8=23
 .label hex2int=24
 .label file_open=25
 .label get_device_status=26
@@ -81,7 +81,7 @@ bios_jmp:
     .word do_prep_path
     .word do_lsblk
     .word do_pprinthex
-    .word do_pprinthex8a
+    .word do_pprinthex8
     .word do_hex2int
     .word do_file_open
     .word do_get_device_status

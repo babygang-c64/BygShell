@@ -57,8 +57,7 @@ swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 
 ```
 ### pStrings
 
-Pstrings are Pascal like strings consisting of a length byte followed by max
-255 characters
+Pstrings are Pascal like strings consisting of a length byte followed by max 255 characters
 
 related macro :
 
