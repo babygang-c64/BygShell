@@ -139,6 +139,7 @@ cmd_echo:
     stx nb_parameters
     lda #1
     sta pos_param
+
 boucle_params:
     ldx pos_param
     swi list_get, parameters.list
@@ -184,7 +185,8 @@ cmd_keytest:
 
 cmd_lsblk:
     clc
-    jmp bios.do_lsblk
+    swi lsblk
+    rts
 
 //----------------------------------------------------
 // cmd_dump : affiche les variables
@@ -326,7 +328,7 @@ change:
     sta prev_device
 
     swi var_set, device_var
-    jsr bios.do_set_device
+    swi set_device
     bcs pb_device
     clc
     rts
@@ -345,8 +347,9 @@ device_var:
 }
 
 //----------------------------------------------------
-// cmd_cmd : envoie une commande
-// r1 : paramètre
+// cmd_cmd : envoie une commande au device courant
+//
+// r1 : commande à envoyer
 //----------------------------------------------------
 
 cmd_cmd:
@@ -358,11 +361,13 @@ cmd_cmd:
     sec
     swi file_open
     bcs error
+
 close_file:
     ldx #15
     swi file_close
     clc
     rts
+
 error:
     jsr close_file
     sec
@@ -388,7 +393,7 @@ cmd_cp:
     ldx #2
     swi list_get, parameters.list
     mov r1, #work_path2
-    bios(bios.prep_path)
+    swi prep_path
     //swi print_path, work_path2
 
     // path source sans séparateur path<:>nom
@@ -624,7 +629,7 @@ cmd_input:
     cmp #3
     bne pas_texte_invite
 
-    bios(bios.pprint)
+    swi pprint
     ldx #2
     swi list_get, parameters.list
     mov r1, r0
@@ -647,7 +652,7 @@ cmd_filter:
     mov r2, r1
     swi var_get,var_pattern
     mov r0, r2
-    bios(bios.filter)
+    swi filter
     bcc no_match
     swi pprintnl, msg_match
 no_match:
@@ -843,7 +848,7 @@ cmd_do_cmd:
     // analyse du path en R0, retour = work_path
     push r1
     mov r1, #work_path
-    bios(bios.prep_path)
+    swi prep_path
 
     lda work_path
     and #PPATH.WITH_DEVICE
@@ -898,7 +903,7 @@ pas_de_device:
 
     // erreur à gérer pour affichage
     sec
-    bios(bios.get_device_status)
+    swi get_device_status
 
     ldx #15
     jsr bios.do_file_close
@@ -1256,7 +1261,7 @@ pas_blocs:
     jsr set_dir_color
     //BRK//*
     mov r1, #dir_entry.filename
-    //call_bios(bios.filter, filtre)
+    //swi filter, filtre
     //bcs filtre_ko
 
     lda options
@@ -1328,7 +1333,7 @@ print_name_no_size:
     sta tosize40
 
     //stw_r(1, dir_entry.filename)
-    //call_bios(bios.filter, filtre)
+    //swi bios.filter, filtre
     //bcs no_print2
     jsr set_dir_color
     swi pprint, dir_entry.filename
@@ -1974,7 +1979,7 @@ boucle_dump:
     mov r2, r0
     
     // r0 += longueur + 1 = adresse valeur
-    bios(bios.str_len)
+    swi str_len
     add r0, #1
 
     // lecture adresse valeur -> dans r1
@@ -2026,7 +2031,7 @@ write_val:
     jmp boucle_dump
 fin_dump:
     ldx #3
-    bios(bios.file_close)
+    swi file_close
 
     clc
     rts
@@ -2113,21 +2118,21 @@ cmd_mem:
 
     ldx #2
     swi list_get, parameters.list
-    bios(bios.hex2int)
+    swi hex2int
     lda zr0l
     sta stop_address
     lda zr0h
     sta stop_address+1
     ldx #1
     swi list_get, parameters.list
-    bios(bios.hex2int)
+    swi hex2int
     lda stop_address
     jmp boucle_hex
 
 juste_8:
     ldx #1
     swi list_get, parameters.list
-    bios(bios.hex2int)
+    swi hex2int
     push r0
     add r8, a
     lda zr0l
