@@ -27,7 +27,7 @@
 .label set_device=11
 .label str_cat=12
 .label str_copy=13
-.label list_rm=14
+.label list_del=14
 .label list_print=15
 .label list_size=16
 .label error=17
@@ -70,7 +70,7 @@ bios_jmp:
     .word do_set_device
     .word do_str_cat
     .word do_str_copy
-    .word do_list_rm
+    .word do_list_del
     .word do_list_print
     .word do_list_size
     .word do_error
@@ -734,12 +734,12 @@ lgr_elem:
 }
 
 //---------------------------------------------------------------
-// list_rm : supprime une entrée dans une liste
+// list_del : supprime une entrée dans une liste
 // entrée : r0 = ptr objet liste, X = numéro entrée à supprimer
 // retour : r0 = ptr objet liste à jour
 //---------------------------------------------------------------
 
-do_list_rm:
+do_list_del:
 {
     stx pos_elem
     jsr setup_list
@@ -1858,7 +1858,7 @@ creation:
     clc
     rts
 
-    // si update, supprime la variable et rappelle setvar
+    // si update, supprime la variable et rappelle var_set
 pas_creation:
     pha
     mov r1, #work_buffer

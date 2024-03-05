@@ -383,19 +383,19 @@ cmd_cp:
     swi list_get, parameters.list
     mov r1, #work_path
     swi prep_path
-    //call_bios(bios.print_path, work_path)
+    //swi print_path, work_path
 
     ldx #2
     swi list_get, parameters.list
     mov r1, #work_path2
     bios(bios.prep_path)
-    //call_bios(bios.print_path, work_path2)
+    //swi print_path, work_path2
 
     // path source sans séparateur path<:>nom
     sec
     mov r1, #work_path
     swi build_path, work_buffer
-    //call_bios(bios.pprintnl, work_buffer)
+    //swi pprintnl, work_buffer
 
     // path destination sans séparateur path<:>nom
     sec
@@ -405,7 +405,7 @@ cmd_cp:
     mov r0, #work_buffer2
     mov r1, #write_str
     swi str_cat
-    //call_bios(bios.pprintnl, work_buffer2)
+    //swi pprintnl, work_buffer2
 
     // open fichier en sortie
     
@@ -540,7 +540,7 @@ boucle_params:
     ldx #1
     stx pos_cat
 encore_cat:
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     jsr jump:$fce2
     bcs fin_cat
 
@@ -578,7 +578,7 @@ do_pagination:
 
     lda #0
     sta cpt_ligne
-    call_bios(bios.pprint, msg_suite)
+    swi pprint, msg_suite
     ldy #6
 wait_key:
     lda KEYPRESS
@@ -754,7 +754,7 @@ boucle_cat:
 affiche_ligne:
     jsr option_pagination
     jsr option_numero
-    call_bios(bios.pprint, work_buffer)
+    swi pprint, work_buffer
 
     // option E = affiche $ en fin de ligne
     lda cmd_cat.options
@@ -774,7 +774,7 @@ end:
     and #2
     bne error
     ldx #2
-    jsr bios.do_file_close
+    swi file_close
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     clc
@@ -787,7 +787,7 @@ error:
     jsr bios.do_file_close
     ldx bios.save_device
     jsr bios.do_set_device_from_int
-    call_bios(bios.error, msg_error.file_not_found)
+    swi error, msg_error.file_not_found
     rts
 
     // option pagination : affichage sur 13 lignes max
@@ -855,7 +855,7 @@ cmd_do_cmd:
     lda bios.devices,x
     bne pas_erreur_device
 
-    call_bios(bios.error, msg_error.device_not_present)
+    swi error, msg_error.device_not_present
     pop r1
     sec
     rts
@@ -883,8 +883,6 @@ pas_de_device:
     mov r1, #work_buffer
     swi str_cat
 
-    //call_bios(bios.pprintnl, work_buffer2)
-
     lda work_buffer2
     ldx #<work_buffer2+1
     ldy #>work_buffer2+1
@@ -908,7 +906,7 @@ pas_de_device:
     rts
 
 error:
-    call_bios(bios.pprintnl, erreur)
+    swi pprintnl, erreur
     sec
     rts
 erreur:
@@ -1512,7 +1510,7 @@ check_history:
 
     dec nb_history
     ldx #0
-    swi list_rm, history_list
+    swi list_del, history_list
 
 pas_max:
     rts
@@ -1565,7 +1563,7 @@ command_process:
     // découpage des paramètres    
     mov r0, #input_buffer
     jsr do_get_params
-    //call_bios(bios.list_print, parameters.list)
+    //swi list_print, parameters.list
 
     // pas de commande = boucle
     lda parameters.list
@@ -1638,14 +1636,14 @@ next_line:
     // sinon traite la ligne
     mov r0, #input_buffer
     jsr command_process
-
-    //call_bios(bios.pprintnl, work_buffer)
     jmp next_line
+
 fini:
     ldx #7
     swi file_close
     clc
     rts
+
 error:
     jsr fini
     swi error, msg_error.command_not_found
@@ -1848,7 +1846,7 @@ add_to_list:
     //-------------------------------------------------------------
 
 pb_options:
-    call_bios(bios.error, msg_error.invalid_parameters)
+    swi error, msg_error.invalid_parameters
     rts
 
     //-------------------------------------------------------------
@@ -2038,8 +2036,8 @@ parcours_variables:
 
 erreur_open:
     ldx #3
-    bios(bios.file_close)
-    call_bios(bios.error, msg_error.write_error)
+    swi file_close
+    swi error, msg_error.write_error
     sec
     rts
 }
@@ -2059,7 +2057,7 @@ cmd_help:
     mov r1, #work_buffer
     swi str_expand, help_location
     mov r0, r1
-    //bios(bios.pprintnl)
+    
     lda bios.device
     sta bios.save_device
     lda #do_cat.OPT_P
@@ -2114,21 +2112,21 @@ cmd_mem:
     bne juste_8
 
     ldx #2
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     bios(bios.hex2int)
     lda zr0l
     sta stop_address
     lda zr0h
     sta stop_address+1
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     bios(bios.hex2int)
     lda stop_address
     jmp boucle_hex
 
 juste_8:
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     bios(bios.hex2int)
     push r0
     add r8, a
