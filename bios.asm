@@ -26,7 +26,7 @@
 .label file_load=10
 .label set_device=11
 .label str_cat=12
-.label str_copy=13
+.label str_cpy=13
 .label list_del=14
 .label list_print=15
 .label list_size=16
@@ -43,8 +43,8 @@
 .label file_close=27
 .label build_path=28
 .label set_device_from_path=29
-.label read_buffer=30
-.label write_buffer=31
+.label buffer_read=30
+.label buffer_write=31
 .label str_expand=32
 .label filter=33
 .label print_path=34
@@ -54,6 +54,8 @@
 .label str_len=38
 .label str_del=39
 .label str_ins=40
+.label str_rchr=41
+.label str_ncpy=42
 
 bios_jmp:
     .word do_reset
@@ -69,7 +71,7 @@ bios_jmp:
     .word do_file_load
     .word do_set_device
     .word do_str_cat
-    .word do_str_copy
+    .word do_str_cpy
     .word do_list_del
     .word do_list_print
     .word do_list_size
@@ -86,8 +88,8 @@ bios_jmp:
     .word do_file_close
     .word do_build_path
     .word do_set_device_from_path
-    .word do_read_buffer
-    .word do_write_buffer
+    .word do_buffer_read
+    .word do_buffer_write
     .word do_str_expand
     .word do_filter
     .word do_print_path
@@ -97,6 +99,8 @@ bios_jmp:
     .word do_str_len
     .word do_str_del
     .word do_str_ins
+    .word do_str_rchr
+    .word do_str_ncpy
 
 * = * "BIOS code"
 
@@ -626,7 +630,7 @@ do_file_load:
     mov r1, #work_buffer
     // 0 : dest = work buffer, 1 = path, 2 = filename
 
-    jsr bios.do_str_copy
+    jsr bios.do_str_cpy
 
     mov r0, #work_buffer
     mov r1, r2
@@ -939,7 +943,7 @@ do_list_add:
     mov r0, r1
     mov r1, r3
     mov r4, r1
-    jsr do_str_copy
+    jsr do_str_cpy
     tay
     pop r0
     tya
@@ -1832,7 +1836,7 @@ creation:
     // copie nom variable
     mov r1, #ptr_last_variable
     mov r1, (r1)
-    jsr do_str_copy
+    jsr do_str_cpy
     add8(ptr_last_variable)
     mov r3, #ptr_last_variable
 
@@ -1843,7 +1847,7 @@ creation:
     mov r1, #ptr_last_value
     mov r1, (r1)
     mov r4, r1
-    jsr do_str_copy
+    jsr do_str_cpy
     add8(ptr_last_value)
 
     // ecriture adresse valeur à la suite du nom
@@ -1863,7 +1867,7 @@ pas_creation:
     pha
     mov r1, #work_buffer
     mov r0, rdest
-    swi str_copy
+    swi str_cpy
     pla
     jsr do_var_del
     mov r0, rsrc
@@ -2112,11 +2116,11 @@ comp_ko:
 }
 
 //---------------------------------------------------------------
-// str_copy : copie pstring en r0 vers destination en r1
+// str_cpy : copie pstring en r0 vers destination en r1
 // en sortie A = longueur + 1 = longueur copiée
 //---------------------------------------------------------------
 
-do_str_copy:
+do_str_cpy:
 {
     swi str_len
     pha
@@ -2340,30 +2344,61 @@ trouve:
     rts
 }
 
-
 //---------------------------------------------------------------
-// str_ncpy : copie X caractères à partir de zsrc vers une
-// nouvelle chaine pstring zdest
+// str_alt_ncpy : alternative str_ncpy using zsrc / zdest
 //---------------------------------------------------------------
 
-do_str_ncpy:
+do_str_alt_ncpy:
 {
     ldy #0
     stx lgr_copie
     push rdest
     lda #0
     setbyte_r(reg_zdest)
+
 copie_nom:
     getbyte_r(reg_zsrc)
     setbyte_r(reg_zdest)
     dex
     bne copie_nom
+
     pop rdest
     lda lgr_copie
     setbyte_r(reg_zdest)
     dec rdest
     clc
     rts
+
+lgr_copie:
+    .byte 0
+}
+
+//---------------------------------------------------------------
+// str_ncpy : copie X caractères à partir de r0 vers une
+// nouvelle chaine pstring en r1
+//---------------------------------------------------------------
+
+do_str_ncpy:
+{
+    ldy #0
+    stx lgr_copie
+    push r1
+    lda #0
+    setbyte_r(zr1)
+
+copie_nom:
+    getbyte_r(zr0)
+    setbyte_r(zr1)
+    dex
+    bne copie_nom
+
+    pop r1
+    lda lgr_copie
+    setbyte_r(zr1)
+    dec r1
+    clc
+    rts
+
 lgr_copie:
     .byte 0
 }
@@ -2552,7 +2587,7 @@ extract_path_name:
     sbc suite_lecture
     tax
     inx
-    jsr do_str_ncpy
+    jsr do_str_alt_ncpy
     jmp fin_extract_path_name
 
     // découpage path / nom, Y = position de départ
@@ -2577,7 +2612,7 @@ do_cut:
     sbc suite_lecture
     tax
     inx
-    jsr do_str_ncpy
+    jsr do_str_alt_ncpy
 
     // destination 
     ldy #0
@@ -2596,7 +2631,7 @@ do_cut:
     sec
     sbc lgr_copie
     tax
-    jsr do_str_ncpy
+    jsr do_str_alt_ncpy
 
     jmp fin_extract_path_name
     
@@ -3268,12 +3303,12 @@ lgr_chaine:
 }
 
 //----------------------------------------------------
-// write_buffer : ecriture bufferisée
+// buffer_write : ecriture bufferisée
 // entrée : R0 = buffer d'écriture, pstring
 // X = id fichier
 //----------------------------------------------------
 
-do_write_buffer:
+do_buffer_write:
 {
     jsr CHKOUT
     ldy #1
@@ -3299,7 +3334,7 @@ pos_lecture:
 }
 
 //----------------------------------------------------
-// read_buffer : lecture bufferisée
+// buffer_read : lecture bufferisée
 // entrée : R0 = buffer de lecture (pstring)
 // C=0 lecture normale, C=1 arrêt si 0d ou 0a (ligne)
 // X = id fichier
@@ -3307,7 +3342,7 @@ pos_lecture:
 // C=0 si pas fini, C=1 si EOF
 //----------------------------------------------------
 
-do_read_buffer:
+do_buffer_read:
 {
     stc lecture_ligne
     jsr CHKIN

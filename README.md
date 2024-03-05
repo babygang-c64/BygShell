@@ -72,8 +72,10 @@ related BIOS operations :
 
 **str_cat** : pstring(r0) += pstring(r1)
 
-**str_copy** : pstring(r1) = pstring(r0)
+**str_cpy** : pstring(r1) = pstring(r0)
     return A = total copied bytes (R0 pstring length + 1)
+
+**str_ncpy** : pstring(r1) = left(pstring(r0), X)
 
 **str_expand** : pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
@@ -100,9 +102,15 @@ related BIOS operations :
 
     On exit : C=1 if found, Y = position
 
+**str_rchr** : backwards str_chr
+
+    On exit : C=1 if found, Y = position
+
 **str_lstrip** : suppress spaces on left side of pstring(r0)
 
 **str_len** : return length of pstring(r0) into A
+
+    On exit : A = pstring length
 
 ### system variables
 

@@ -433,10 +433,10 @@ cmd_cp:
 copie_fichier:
     ldx #2
     clc
-    swi read_buffer, work_buffer
+    swi buffer_read, work_buffer
     stc copie_finie
     ldx #3
-    swi write_buffer, work_buffer
+    swi buffer_write, work_buffer
     lda copie_finie
     beq copie_fichier
 
@@ -1168,7 +1168,7 @@ pas_de_parametres:
     ldx #1
     swi list_get, parameters.list
     mov r1, #filtre
-    swi str_copy
+    swi str_cpy
 
 pas_filtre:
     lda #0
@@ -1614,7 +1614,7 @@ script_execute:
 next_line:
     ldx #7
     sec
-    swi read_buffer, input_buffer
+    swi buffer_read, input_buffer
     bcs fini
 
     // si ligne vide, empty ou commence par # = ignore
