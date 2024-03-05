@@ -53,6 +53,7 @@
 .label str_lstrip=37
 .label str_len=38
 .label str_del=39
+.label str_ins=40
 
 bios_jmp:
     .word do_reset
@@ -95,6 +96,7 @@ bios_jmp:
     .word do_str_lstrip
     .word do_str_len
     .word do_str_del
+    .word do_str_ins
 
 * = * "BIOS code"
 
@@ -137,15 +139,16 @@ do_reset:
     jsr CHROUT
     jsr CLEARSCREEN
 
-    swi pprintnl, text_reset
-    swi pprintnl, text_version
-
+    // lookup how many variables and commands are available at startup
     swi count_vars, var_names
     sta nb_variables
-
     swi count_vars, internal_commands
     sta nb_cmd
 
+    // print banner
+    swi pprintnl, text_banner
+
+    // check present devices
     sec
     swi lsblk
     stx bios.device
@@ -164,13 +167,8 @@ device_ok:
     clc
     jmp shell.toplevel
 
-text_reset:
-    pstring("BYG SHELL")
-
-text_version:
-    .byte 5
-    .text "V0.1"
-    .byte 13
+text_banner:
+    pstring("BYG SHELLmV%VVERSION%m")
 }
 
 //---------------------------------------------------------------
@@ -2213,7 +2211,76 @@ copie:
 }
 
 //---------------------------------------------------------------
-// str_del : supprime X caractères à partir de la position Y
+// str_ins : insère dans r0 la chaine r1 en position X
+//---------------------------------------------------------------
+
+do_str_ins:
+{
+    // 0 12 DEFG 3456789
+    // 0 12 3456 789ABCD
+    // 3 "DEFG"
+    // 1. décale la fin de chaine pour faire de la place
+    // lecture : X, lgr r1, écriture : x+lgr r1
+    // 2. copie r1 en position X
+    // 3. mise à jour lgr = +lgr r1
+
+    stx pos_lecture
+    stx pos_copie
+    push r0
+    mov r0, r1
+    swi str_len
+    sta lgr_r1
+    tax
+    clc
+    adc pos_lecture
+    sta pos_ecriture
+    pop r0
+
+decale:
+    ldy pos_lecture
+    mov a, (r0)
+    ldy pos_ecriture
+    mov (r0), a
+    inc pos_lecture
+    inc pos_ecriture
+    dex
+    bne decale
+    inx
+    stx pos_lecture_copie
+
+    ldx lgr_r1
+copie:
+    ldy pos_lecture_copie
+    mov a, (r1)
+    ldy pos_copie
+    mov (r0), a
+    inc pos_lecture_copie
+    inc pos_copie
+    dex
+    bne copie
+
+    swi str_len
+    clc
+    adc lgr_r1
+    mov (r0), a
+
+    clc
+    rts
+
+pos_lecture:
+    .byte 0
+pos_ecriture:
+    .byte 0
+pos_copie:
+    .byte 0
+pos_lecture_copie:
+    .byte 0
+lgr_r1:
+    .byte 0
+}
+
+//---------------------------------------------------------------
+// str_del : supprime Y caractères à partir de la position X
 // entrée : R0 = pstring
 // todo : contrôle erreurs / dépassements
 //---------------------------------------------------------------
@@ -2222,10 +2289,10 @@ do_str_del:
 {
     // 0 123456789 : 3, 4 -> 0 123 4567 89 -> 0 12389
     // début Y+1
-    stx nb_supp
-    iny
-    sty pos_ecriture
-    tya
+    sty nb_supp
+    inx
+    stx pos_ecriture
+    txa
     clc
     adc nb_supp
     sta pos_lecture

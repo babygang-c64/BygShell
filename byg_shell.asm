@@ -2300,6 +2300,8 @@ var_names:
     .word device_value
     pstring("CONFIG")
     .word config_value
+    pstring("VERSION")
+    .word version_value
 
 variables_end:
     .byte 0
@@ -2315,6 +2317,8 @@ device_value:
     pstring("10")
 config_value:
     pstring("9://CONFIG/")
+version_value:
+    pstring("0.2")
 
 values_end:
 
