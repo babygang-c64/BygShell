@@ -34,6 +34,8 @@ Warning : indirect MOV operations rely on Y beeing set to 0, if not then Y will 
 ```
 add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
 add r<n>, a         : add a to register n
+add <addr>, a       : add a to value at address <addr>
+todo : add <addr>, #<imm> and add <addr>, <addr2>
 ```
 **Inc, Dec**
 ```

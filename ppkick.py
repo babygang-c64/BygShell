@@ -21,7 +21,7 @@ def param_type(param):
     if param[0] == '#':
         ptype = 'i'
         pval = param[1:]
-    elif param[0].lower() == 'a':
+    elif param.lower() == 'a':
         ptype = 'a'
         pval = ''
     elif param[0].lower()=='r' and (param[1:].isnumeric() or param.lower() in ['rdest', 'rsrc']):
@@ -120,6 +120,9 @@ for line in hin:
                 newline = 'addi_r(' + pval0 +', ' + pval1 + ')'
             else:
                 newline = 'addw_r(' + pval0 +', ' + pval1 + ')'
+            hout.write(newline + '\n')
+        elif ptype0 == 'w' and ptype1 == 'a':
+            newline = 'add8(' + pval0 + ')'
             hout.write(newline + '\n')
         else:
             print(ptype0, pval0)

@@ -1837,7 +1837,7 @@ creation:
     mov r1, #ptr_last_variable
     mov r1, (r1)
     jsr do_str_cpy
-    add8(ptr_last_variable)
+    add ptr_last_variable, a
     mov r3, #ptr_last_variable
 
     // copie valeur variable
@@ -1848,14 +1848,14 @@ creation:
     mov r1, (r1)
     mov r4, r1
     jsr do_str_cpy
-    add8(ptr_last_value)
+    add ptr_last_value, a
 
     // ecriture adresse valeur à la suite du nom
     mov (r3), r4
 
     // ajoute longueur adresse valeur à ptr_last_variable
     lda #2
-    add8(ptr_last_variable)
+    add ptr_last_variable, a
 
     // incrémente le nb de variables
     inc nb_variables
