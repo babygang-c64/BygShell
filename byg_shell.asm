@@ -1532,6 +1532,7 @@ pas_copie_history:
 }
 
 toplevel:
+
     // affiche le prompt
     swi var_get, varprompt
     mov r0, r1
@@ -2130,48 +2131,19 @@ juste_8:
 
 boucle_hex:
 
-    lda zr0h
-    jsr bios.do_pprinthex8a
-    lda zr0l
-    jsr bios.do_pprinthex8a
-
-    lda #0
-    sta nb_bytes
-aff_mem:
-    lda #32
-    jsr CHROUT
-    ldy #0
-    getbyte_r(0)
-    ldx nb_bytes
-    sta bytes,x
-
-    jsr bios.do_pprinthex8a
-    inc nb_bytes
-    lda nb_bytes
-    cmp #8
-    bne aff_mem
-    lda #32
-    jsr CHROUT
+    mov r1, r0
     ldx #0
-aff_txt:
-    lda bytes,x
-    cmp #$20
-    bpl pas_moins
-    lda #'.'
-pas_moins:
-    cmp #$80
-    bcc pas_plus
-    cmp #$a0
-    bpl pas_plus
-    lda #'.'
-pas_plus:
-    jsr CHROUT
+prep_buffer:
+    mov a, (r0++)
+    sta bytes+1,x
     inx
     cpx #8
-    bne aff_txt
+    bne prep_buffer
+    push r0
+    mov r0, #bytes
+    jsr print_hex_buffer
+    pop r0
 
-    lda #13
-    jsr CHROUT
     jsr $FFE1      // RUN/STOP pressed?
     beq fin_hex
 
@@ -2192,12 +2164,104 @@ stop_address:
 nb_bytes:
     .byte 0
 bytes:
+    .byte 8
     .fill 8,0
-adr_hex:
-    pstring(":%R1")
 }
 
+//---------------------------------------------------------------
+// print_hex_buffer : hexdump buffer en r0, adresse r1
+//---------------------------------------------------------------
 
+print_hex_buffer:
+{
+    lda #0
+    sta nb_bytes
+
+    swi str_len 
+    sta nb_total
+    inc r0
+
+aff_line:
+    push r0
+    mov r0, r1
+    sec
+    swi pprinthex
+    pop r0
+    lda #32
+    jsr CHROUT
+
+aff_bytes:
+    mov a, (r0++)
+    ldx nb_bytes
+    sta bytes,x
+    jsr bios.do_pprinthex8a
+    lda #32
+    jsr CHROUT
+    dec nb_total
+    beq fin_print
+    inc nb_bytes
+    lda nb_bytes
+    cmp #8
+    bne aff_bytes
+
+    lda #0
+    sta nb_bytes
+    jsr print_hex_text
+
+    add r1, #8
+    jmp aff_line
+
+fin_print:
+    ldx nb_bytes
+    cpx #7
+    beq ok_fin
+    lda #0
+    sta bytes,x
+    lda #'.'
+    jsr CHROUT
+    jsr CHROUT
+    lda #32
+    jsr CHROUT
+    inc nb_bytes
+    lda nb_bytes
+    cmp #7
+    bne fin_print
+
+ok_fin:
+    jsr print_hex_text
+    lda #13
+    jsr CHROUT
+
+    clc
+    rts
+
+print_hex_text:
+    ldx #0
+aff_txt:
+    lda bytes,x
+    cmp #$20
+    bpl pas_moins
+    lda #'.'
+pas_moins:
+    cmp #$80
+    bcc pas_plus
+    cmp #$a0
+    bpl pas_plus
+    lda #'.'
+pas_plus:
+    jsr CHROUT
+    inx
+    cpx #8
+    bne aff_txt
+    rts
+
+bytes:
+    .fill 8,0
+nb_bytes:
+    .byte 0
+nb_total:
+    .byte 0
+}
 
 
 } // namespace shell

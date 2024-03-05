@@ -1727,13 +1727,16 @@ do_pprintnl:
 
 //---------------------------------------------------------------
 // do_pprinthex : affiche en hexa format $xxxx la valeur en r0
+// si C=1, n'affiche pas le préfixe
 //---------------------------------------------------------------
 
 do_pprinthex:
 {
     stx ztmp
+    bcs no_prefix
     lda #'$'
     jsr CHROUT
+no_prefix:
     lda zr0h
     jsr do_pprinthex8a
     jsr do_pprinthex8
