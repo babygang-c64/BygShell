@@ -137,22 +137,22 @@ do_reset:
     jsr CHROUT
     jsr CLEARSCREEN
 
-    call_bios(pprintnl, text_reset)
-    call_bios(pprintnl, text_version)
+    swi pprintnl, text_reset
+    swi pprintnl, text_version
 
-    call_bios(count_vars, var_names)
+    swi count_vars, var_names
     sta nb_variables
 
-    call_bios(count_vars, internal_commands)
+    swi count_vars, internal_commands
     sta nb_cmd
 
     sec
-    bios(bios.lsblk)
+    swi lsblk
     stx bios.device
     // ici A = nb devices et X = 1er device
 
     // tente de sélectionner le device dans variable device
-    bios(bios.set_device)
+    swi set_device
     bcc device_ok
 
     // si KO essaye le 1er device trouvé
@@ -490,7 +490,7 @@ do_error:
     lda bios.color_error
     sta CURSOR_COLOR
     push r0
-    call_bios(bios.pprint, msg_error)
+    swi pprint, msg_error
     pop r0
     lda #pprintnl
     jsr bios_exec
@@ -628,7 +628,7 @@ set_device:
     rts
 
 no_device:
-    call_bios(error, msg_error.device_not_present)
+    swi error, msg_error.device_not_present
     sec
     rts
 
@@ -716,7 +716,7 @@ do_file_load:
     bcc load_ok
 
 erreur:
-    call_bios(bios.error, msg_error.command_not_found)
+    swi error, msg_error.command_not_found
     rts
 
 load_ok:
@@ -2174,7 +2174,7 @@ nb_var_work:
 do_str_cmp:
 {
     // si pas même longueur = KO
-    bios(bios.str_len)
+    swi str_len
     cmp (zr1),y
     bne comp_ko
     tay
@@ -2198,7 +2198,7 @@ comp_ko:
 
 do_str_copy:
 {
-    bios(bios.str_len)
+    swi str_len
     pha
     tay
 copie:
@@ -2230,7 +2230,7 @@ do_str_del:
     adc nb_supp
     sta pos_lecture
     
-    bios(bios.str_len)
+    swi str_len
     sec
     sbc pos_ecriture
     sbc nb_supp
@@ -2287,7 +2287,7 @@ do_print_path:
     // name
     mov r6, r0
 
-    call_bios(bios.pprintnl, msg_path)
+    swi pprintnl, msg_path
     pop r0
     rts
 msg_path:
@@ -2426,7 +2426,7 @@ suite_lecture:
 
 syntax_error:
     pop r0
-    call_bios(bios.error, msg_error.invalid_parameters)
+    swi error, msg_error.invalid_parameters
     sec
     rts
 
@@ -3212,7 +3212,7 @@ boucle_lecture:
     
     // todo ici  : erreur dépassement buffer
 erreur:
-    call_bios(bios.error, msg_error.buffer_overflow)
+    swi error, msg_error.buffer_overflow
     sec
     rts
 
@@ -3411,7 +3411,7 @@ not_directory:
     bcs error
 
     //sec // tmp
-    bios(get_device_status)
+    swi get_device_status
     bcs error
 
     // si read = CHKIN, sinon CHKOUT
@@ -3563,7 +3563,7 @@ pas_aff:
 code_status:
     pstring("00")
 devnp:
-    call_bios(bios.error, msg_error.device_not_present)
+    swi error, msg_error.device_not_present
     rts
 
 silencieux:
@@ -3691,6 +3691,18 @@ color_error:
 .macro call_bios(bios_func, word_param)
 {
     mov r0, #word_param
+    lda #bios_func
+    jsr bios.bios_exec
+}
+
+//===============================================================
+// call_bios2 : call bios function with parameters in r0, r1
+//===============================================================
+
+.macro call_bios2(bios_func, word_param, word_param2)
+{
+    mov r0, #word_param
+    mov r1, #word_param2
     lda #bios_func
     jsr bios.bios_exec
 }

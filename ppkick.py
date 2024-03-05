@@ -154,9 +154,17 @@ for line in hin:
         ptype0, pval0 = param_type(elems[1])
         if len(elems) == 2:
             newline = 'bios(bios.' + pval0 + ')'
-        else:
+        elif len(elems) == 4:
             ptype1, pval1 = param_type(elems[3])
             newline = 'call_bios(bios.' + pval0 + ', ' + pval1 + ')'
+        elif len(elems) == 6:
+            pval1 = elems[3]
+            pval2 = elems[5]
+            newline = 'call_bios2(bios.' + pval0 + ', ' + pval1 + ', '
+            newline += pval2 + ')'
+        else:
+                print('error', line)
+                input('wait')
         hout.write(newline + '\n')
     else:
         hout.write(line)

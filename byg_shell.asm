@@ -489,7 +489,7 @@ do_needs_parameters:
     bpl ko
     rts
 ko:
-    call_bios(bios.error, msg_error.needs_parameters)
+    swi error, msg_error.needs_parameters
     pla
     pla
     rts

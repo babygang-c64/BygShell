@@ -16,7 +16,8 @@ zr0h to zr1h : higher bytes of registers
 **Mov**
 ```
 mov r<n>, r<m>      : register n = register m
-mov r<n>, <addr>    : register n = address
+mov r<n>, #<addr>   : register n = address
+mov r<n>, <addr>    : register n = content at address
 mov a, (r<n>)       : a = byte at register n address
 mov a, (r<n>++)     : a = byte at register n address, increment register
 mov (r<n>), a       : store a at register n address
