@@ -143,7 +143,52 @@ filename:
 //---------------------------------------------------------------
 
 //---------------------------------------------------------------
-// stw_r(reg, word) : reg = word
+// stw_w(word, word2) : (word) = (word2)
+// preserves Y
+//
+// mov addr1, addr2
+//---------------------------------------------------------------
+
+.macro stw_w(word1, word2)
+{
+    lda word2
+    sta word1
+    lda word2+1
+    sta word1+1
+}
+
+//---------------------------------------------------------------
+// sti_w(word, word2) : (word) = word2
+// preserves Y
+//
+// mov addr1, #addr2
+//---------------------------------------------------------------
+
+.macro sti_w(word1, word2)
+{
+    lda #<word2
+    sta word1
+    lda #>word2
+    sta word1+1
+}
+
+//---------------------------------------------------------------
+// sti_r(reg, word) : reg = word
+// preserves Y
+//
+// mov r<n>, #addr
+//---------------------------------------------------------------
+
+.macro sti_r(reg, word_param)
+{
+    lda #<word_param
+    sta zr0l+2*reg
+    lda #>word_param
+    sta zr0h+2*reg
+}
+
+//---------------------------------------------------------------
+// stw_r(reg, word) : reg = (word)
 // preserves Y
 //
 // mov r<n>, addr
@@ -151,9 +196,9 @@ filename:
 
 .macro stw_r(reg, word_param)
 {
-    lda #<word_param
+    lda word_param
     sta zr0l+2*reg
-    lda #>word_param
+    lda word_param
     sta zr0h+2*reg
 }
 

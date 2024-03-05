@@ -23,6 +23,8 @@ mov (r<n>), a       : store a at register n address
 mov (r<n>++),a      : store a at register n address, increment register
 mov (r<n>), r<m>    : store register m at address in register n
 mov r<n>, (r<m>)    : store value at address in register m
+mov <addr>, <addr2> : copy word at addr2 to addr
+mov <addr>, #<val>  : copy value to addr
 ```
 **Add**
 ```

@@ -587,13 +587,13 @@ do_set_device_from_int:
     stx device_tmp
     lda #0
     sta zr0h
-    mov r1, int_conv
+    mov r1, #int_conv
     jsr do_int2str
-    call_bios(bios.str_lstrip, int_conv)
+    swi str_lstrip, int_conv
 
     // remplace la variable DEVICE
     mov r1, r0
-    call_bios(setvar, do_set_device.text_device)
+    swi setvar, do_set_device.text_device
     pop r0
     lda device_tmp
     jmp do_set_device.set_device
@@ -610,7 +610,7 @@ device_tmp:
 do_set_device:
 {
     // lecture variable device
-    call_bios(bios.getvar, text_device)
+    swi getvar, text_device
     mov r0, r1
     jsr do_str2int
     // si pas int, no device
@@ -700,18 +700,18 @@ do_file_load:
 
     // test avec PATH + NOM
 
-    call_bios(bios.getvar, text_path)
+    swi getvar, text_path
     mov r0, r1
-    mov r1, work_buffer
+    mov r1, #work_buffer
     // 0 : dest = work buffer, 1 = path, 2 = filename
 
     jsr bios.do_str_copy
 
-    mov r0, work_buffer
+    mov r0, #work_buffer
     mov r1, r2
     jsr bios.do_str_cat
     
-    mov r0, work_buffer
+    mov r0, #work_buffer
     jsr test_load
     bcc load_ok
 
@@ -952,7 +952,7 @@ fin_get_trouve:
 
 fin_get_non_trouve:
     sec
-    mov r0, do_getvar.msg_pas_var
+    mov r0, #do_getvar.msg_pas_var
     ldx pos_elem
     rts
 
@@ -1279,7 +1279,7 @@ fin_input:
     ldx max_x
     stx input_buffer
 
-    mov r0, input_buffer
+    mov r0, #input_buffer
     clc
     rts
 
@@ -1331,7 +1331,7 @@ boucle_history:
     // récupère l'élément d'historique et sa
     // longueur et effectue la copie
 copie_history:
-    call_bios(list_get, shell.history_list)
+    swi list_get, shell.history_list
     ldy #0
     lda (zr0),y
     sta nb_copie
@@ -1649,7 +1649,7 @@ process_variable:
     // V = variable : récupère la valeur d'une variable
 
     push r1
-    mov r1, work_name
+    mov r1, #work_name
     lda #0
     setbyte_r(1)
 
@@ -1671,7 +1671,7 @@ fin_copie_nom:
     // la valeur
 
     push r0
-    mov r0, work_name
+    mov r0, #work_name
     jsr do_getvar
     mov r2, r1
     pop r0
@@ -1773,7 +1773,7 @@ do_pprint:
     push r1
     tya
     pha
-    mov r1, work_pprint
+    mov r1, #work_pprint
     jsr do_str_expand
     lda work_pprint
     beq est_vide
@@ -1884,7 +1884,7 @@ do_getvar:
     rts
 
 pas_var:
-    mov r1, msg_pas_var
+    mov r1, #msg_pas_var
     sec
     rts
 
@@ -1910,17 +1910,17 @@ do_setvar:
 creation:
     // création : 
     // copie nom variable
-    mov r1, ptr_last_variable
+    mov r1, #ptr_last_variable
     mov r1, (r1)
     jsr do_str_copy
     add8(ptr_last_variable)
-    mov r3, ptr_last_variable
+    mov r3, #ptr_last_variable
 
     // copie valeur variable
     mov r0, rdest
     //pop r1
     //mov r0, r1
-    mov r1, ptr_last_value
+    mov r1, #ptr_last_value
     mov r1, (r1)
     mov r4, r1
     jsr do_str_copy
@@ -1941,13 +1941,13 @@ creation:
     // si update, supprime la variable et rappelle setvar
 pas_creation:
     pha
-    mov r1, work_buffer
+    mov r1, #work_buffer
     mov r0, rdest
-    bios(bios.str_copy)
+    swi str_copy
     pla
     jsr do_rmvar
     mov r0, rsrc
-    mov r1, work_buffer
+    mov r1, #work_buffer
     jmp do_setvar
 }
 
@@ -1968,11 +1968,11 @@ do_rmvar:
     sta to_supp
 
     // source
-    mov r0, var_names
-    mov r2, var_values
+    mov r0, #var_names
+    mov r2, #var_values
     // destination
-    mov r1, var_names
-    mov r3, var_values
+    mov r1, #var_names
+    mov r3, #var_values
 
     // recopie des noms, sauf si numéro à supprimer
     ldy #0
@@ -2098,7 +2098,7 @@ nb_to_copy:
 
 lookup_cmd:
 {
-    mov r1, internal_commands
+    mov r1, #internal_commands
     lda nb_cmd
     sta nb_var_work
     jmp lookup_gen
@@ -2106,7 +2106,7 @@ lookup_cmd:
 
 lookup_var:
 {
-    mov r1, var_names
+    mov r1, #var_names
     lda nb_variables
     sta nb_var_work
 }
@@ -2503,10 +2503,10 @@ str_partition:
 convert_device_partition:
     push r0
     mov r2, r1
-    mov r0, str_device
+    mov r0, #str_device
     jsr bios.do_str2int
     pha
-    mov r0, str_partition
+    mov r0, #str_partition
     jsr bios.do_str2int
     pha
     mov r1, r2
@@ -3466,7 +3466,7 @@ do_build_path:
 
     // ajout PATH
     add r1, #3
-    bios(bios.str_cat)
+    swi str_cat
 
 pas_path:
     lda options_path
@@ -3477,8 +3477,8 @@ pas_path:
     lda pas_ajout
     bne pas_ajout_sep
 
-    mov r1, msg_sep
-    bios(bios.str_cat)
+    mov r1, #msg_sep
+    swi str_cat
 
 pas_ajout_sep:
     mov r1, rsrc
@@ -3486,7 +3486,7 @@ pas_ajout_sep:
     mov a, (r1)
     add r1, a
     inc r1
-    bios(bios.str_cat)
+    swi str_cat
 
 pas_name:
     clc
@@ -3543,7 +3543,7 @@ lecture_reste:
 
     jsr UNTLK
 
-    mov r0, code_status
+    mov r0, #code_status
     jsr bios.do_str2int
     beq code_ok
     sec
@@ -3593,7 +3593,7 @@ do_print_int:
     sta do_padding
     txa
     pha
-    mov r1, int_conv
+    mov r1, #int_conv
     jsr bios.do_int2str
 
     ldx #0
@@ -3690,7 +3690,7 @@ color_error:
 
 .macro call_bios(bios_func, word_param)
 {
-    mov r0, word_param
+    mov r0, #word_param
     lda #bios_func
     jsr bios.bios_exec
 }

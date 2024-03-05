@@ -198,23 +198,23 @@ cmd_dump:
     lda type_dump
     beq dump_env
 
-    call_bios(bios.count_vars, internal_commands)
+    swi count_vars, internal_commands
     sta parcours_variables
     cmp #0
     bne dump_cmd
     jmp fin_dump
 
 dump_cmd:
-    mov r0, internal_commands
+    mov r0, #internal_commands
     jmp boucle_dump
 
 dump_env:
-    call_bios(bios.count_vars, var_names)
+    swi count_vars, var_names
     sta parcours_variables
     cmp #0
     beq fin_dump
 
-    mov r0, var_names
+    mov r0, #var_names
 
 boucle_dump:
 
@@ -247,11 +247,11 @@ boucle_dump:
     // les valeurs des variables
     lda type_dump
     beq type_env
-    mov r0, txt_autre
+    mov r0, #txt_autre
     jmp suite_env
 
 type_env:
-    mov r0, txt_env
+    mov r0, #txt_env
 
 suite_env:
     mov r3, r1
@@ -290,7 +290,7 @@ cmd_set:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     lda #'='
     jsr extract_cmd
     jsr bios.do_setvar
@@ -305,7 +305,7 @@ cmd_set:
 cmd_status:
 {
     sec
-    bios(bios.get_device_status)
+    swi get_device_status
     rts
 }
 
@@ -318,14 +318,14 @@ cmd_device:
     needs_parameters(1)
 
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
 
 change:
     mov r1, r0
     lda bios.device
     sta prev_device
 
-    mov r0, device_var
+    mov r0, #device_var
     jsr bios.do_setvar
     jsr bios.do_set_device
     bcs pb_device
@@ -354,14 +354,14 @@ cmd_cmd:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     ldx #15
     sec
-    bios(bios.file_open)
+    swi file_open
     bcs error
 close_file:
     ldx #15
-    bios(bios.file_close)
+    swi file_close
     clc
     rts
 error:
@@ -381,47 +381,47 @@ cmd_cp:
     sta bios.save_device
 
     ldx #1
-    call_bios(bios.list_get, parameters.list)
-    mov r1, work_path
-    bios(bios.prep_path)
+    swi list_get, parameters.list
+    mov r1, #work_path
+    swi prep_path
     //call_bios(bios.print_path, work_path)
 
     ldx #2
-    call_bios(bios.list_get, parameters.list)
-    mov r1, work_path2
+    swi list_get, parameters.list
+    mov r1, #work_path2
     bios(bios.prep_path)
     //call_bios(bios.print_path, work_path2)
 
     // path source sans séparateur path<:>nom
     sec
-    mov r1, work_path
-    call_bios(bios.build_path, work_buffer)
+    mov r1, #work_path
+    swi build_path, work_buffer
     //call_bios(bios.pprintnl, work_buffer)
 
     // path destination sans séparateur path<:>nom
     sec
-    mov r1, work_path2
-    call_bios(bios.build_path, work_buffer2)
+    mov r1, #work_path2
+    swi build_path, work_buffer2
 
-    mov r0, work_buffer2
-    mov r1, write_str
-    bios(bios.str_cat)
+    mov r0, #work_buffer2
+    mov r1, #write_str
+    swi str_cat
     //call_bios(bios.pprintnl, work_buffer2)
 
     // open fichier en sortie
     
-    call_bios(bios.set_device_from_path, work_path2)
+    swi set_device_from_path, work_path2
     sec
     ldx #3
-    call_bios(bios.file_open, work_buffer2)
+    swi file_open, work_buffer2
     bcs erreur_open_2
 
     // open fichier en entrée
 
-    call_bios(bios.set_device_from_path, work_path)
+    swi set_device_from_path, work_path
     clc
     ldx #2
-    call_bios(bios.file_open, work_buffer)
+    swi file_open, work_buffer
     bcs erreur_open_1
 
     // copie fichier 1 vers 2
@@ -429,10 +429,10 @@ cmd_cp:
 copie_fichier:
     ldx #2
     clc
-    call_bios(bios.read_buffer, work_buffer)
+    swi read_buffer, work_buffer
     stc copie_finie
     ldx #3
-    call_bios(bios.write_buffer, work_buffer)
+    swi write_buffer, work_buffer
     lda copie_finie
     beq copie_fichier
 
@@ -449,21 +449,21 @@ copie_finie:
 
 close_files:
     ldx #3
-    bios(bios.file_close)
+    swi file_close
     ldx #2
-    bios(bios.file_close)
+    swi file_close
     rts
 
 erreur_open_2:
     ldx #3
-    bios(bios.file_close)
-    call_bios(bios.error, msg_error.write_error)
+    swi file_close
+    swi error, msg_error.write_error
     jmp close1
 erreur_open_1:
-    call_bios(bios.error, msg_error.read_error)
+    swi error, msg_error.read_error
 close1:
     ldx #2
-    bios(bios.file_close)
+    swi file_close
     sec
     rts
 
@@ -507,13 +507,13 @@ check_options:
 {
     lda parameters.options
     beq pas_options
-    mov r0, parameters.options
+    mov r0, #parameters.options
     jsr do_get_options
     bcc options_ok
     cmp #0
     beq pas_options
 
-    call_bios(bios.error, msg_error.invalid_option)
+    swi error, msg_error.invalid_option
     pla
     pla
     rts
@@ -619,7 +619,7 @@ cmd_input:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     mov r1, r0
     lda parameters.list
     cmp #3
@@ -627,13 +627,13 @@ cmd_input:
 
     bios(bios.pprint)
     ldx #2
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     mov r1, r0
 
 pas_texte_invite:
-    bios(bios.input)
+    swi input
     swap r0, r1
-    bios(bios.setvar)
+    swi setvar
     clc
     rts
 }
@@ -682,7 +682,7 @@ cmd_more:
 cmd_cat:
 {
     needs_parameters(1)
-    mov r1, options_cat
+    mov r1, #options_cat
     jsr check_options
 options_ok:
     sta options
@@ -692,7 +692,7 @@ options_ok:
     lda bios.device
     sta bios.save_device
 
-    mov r0, do_cat
+    mov r0, #do_cat
     jmp boucle_params
 
 options:
@@ -718,14 +718,14 @@ do_cat:
     // passe le nom en r0 par un objet ppath
     // mise à jour device + nom construit dans r0
 
-    mov r1, work_path
-    bios(bios.prep_path)
-    mov r1, work_path
-    call_bios(bios.set_device_from_path, work_path)
-    mov r1, work_path
+    mov r1, #work_path
+    swi prep_path
+    mov r1, #work_path
+    swi set_device_from_path, work_path
+    mov r1, #work_path
     clc
-    call_bios(bios.build_path, work_buffer)
-    mov r0, work_buffer
+    swi build_path, work_buffer
+    mov r0, #work_buffer
 
     sec
     jsr option_pagine
@@ -843,7 +843,7 @@ cmd_do_cmd:
 
     // analyse du path en R0, retour = work_path
     push r1
-    mov r1, work_path
+    mov r1, #work_path
     bios(bios.prep_path)
 
     lda work_path
@@ -867,22 +867,22 @@ pas_erreur_device:
 
 pas_de_device:
     // construction du path cible dans work_buffer
-    mov r1, work_path
+    mov r1, #work_path
     lda avec_sep
     ror
-    call_bios(bios.build_path, work_buffer)
+    swi build_path, work_buffer
 
     // commande à envoyer = r5 + work_buffer
 
     ldy #0
     sty work_buffer2
 
-    mov r0, work_buffer2
+    mov r0, #work_buffer2
     pop r1
-    bios(bios.str_cat)
+    swi str_cat
 
-    mov r1, work_buffer
-    bios(bios.str_cat)
+    mov r1, #work_buffer
+    swi str_cat
 
     //call_bios(bios.pprintnl, work_buffer2)
 
@@ -1028,8 +1028,8 @@ cmd_mkdir:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
-    mov r1, commande
+    swi list_get, parameters.list
+    mov r1, #commande
     clc
     jmp cmd_do_cmd
 
@@ -1045,8 +1045,8 @@ cmd_rmdir:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
-    mov r1, commande
+    swi list_get, parameters.list
+    mov r1, #commande
     clc
     jmp cmd_do_cmd
 
@@ -1061,11 +1061,11 @@ commande:
 cmd_rm:
 {
     needs_parameters(1)
-    mov r0, do_rm
+    mov r0, #do_rm
     jmp boucle_params
 
 do_rm:
-    mov r1, commande
+    mov r1, #commande
     clc
     jmp cmd_do_cmd
 
@@ -1081,13 +1081,13 @@ cmd_cd:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
-    mov r1, parent
-    bios(bios.str_cmp)
+    swi list_get, parameters.list
+    mov r1, #parent
+    swi str_cmp
     bcc not_parent
-    mov r0, oparent
+    mov r0, #oparent
 not_parent:
-    mov r1, commande
+    mov r1, #commande
     clc
     jmp cmd_do_cmd
 
@@ -1151,8 +1151,8 @@ cmd_ls:
     lda parameters.options
     beq pas_de_parametres
 
-    mov r0, parameters.options
-    mov r1, options_ls
+    mov r0, #parameters.options
+    mov r1, #options_ls
     
     jsr do_get_options
     bcc options_ok
@@ -1178,7 +1178,7 @@ pas_de_parametres:
     // si filtre en paramètre, copie le 
     ldx #1
     swi list_get, parameters.list
-    mov r1, filtre
+    mov r1, #filtre
     swi str_copy
 
 pas_filtre:
@@ -1258,7 +1258,7 @@ pas_blocs:
 
     jsr set_dir_color
     //BRK//*
-    mov r1, dir_entry.filename
+    mov r1, #dir_entry.filename
     //call_bios(bios.filter, filtre)
     //bcs filtre_ko
 
@@ -1506,16 +1506,14 @@ msg_taille:
 
 check_history:
 {
-    mov r0, history_list
-    ldy #0
-    lda (zr0),y
+    swi str_len, history_list
     cmp max_history
     beq pas_max
     bmi pas_max
 
     dec nb_history
     ldx #0
-    call_bios(bios.list_rm, history_list)
+    swi list_rm, history_list
 
 pas_max:
     rts
@@ -1532,7 +1530,7 @@ add_history:
     swi str_len
     beq pas_copie_history
 
-    mov r1, history_kw
+    mov r1, #history_kw
     swi str_cmp
     bcs pas_copie_history
 
@@ -1567,7 +1565,7 @@ toplevel:
 command_process:
 {
     // découpage des paramètres    
-    mov r0, input_buffer
+    mov r0, #input_buffer
     jsr do_get_params
     //call_bios(bios.list_print, parameters.list)
 
@@ -1640,7 +1638,7 @@ next_line:
     beq next_line
 
     // sinon traite la ligne
-    mov r0, input_buffer
+    mov r0, #input_buffer
     jsr command_process
 
     //call_bios(bios.pprintnl, work_buffer)
@@ -1688,7 +1686,7 @@ do_get_params:
     // travaille avec r4 pour la lecture
     mov r4, r0
     // raz options (positions 2 à 9, conserve lgr et -)
-    mov r1, parameters.options
+    mov r1, #parameters.options
     
     ldy #2
     lda #$30
@@ -1702,8 +1700,8 @@ raz_options:
 
     // raz liste des paramètres
     
-    mov r1, parameters.data
-    call_bios(bios.list_reset, parameters.list)
+    mov r1, #parameters.data
+    swi list_reset, parameters.list
 
     // raz présence options
     ldy #0
@@ -1735,7 +1733,7 @@ lecture_chaine:
     // alors HS, sinon recopie dans parameters.options
     //--------------------------------------------------------
 
-    mov r1, parameters.options
+    mov r1, #parameters.options
     jsr process_traite_options
 
     //-- test de la suite de la chaine, si non vide,
@@ -1805,7 +1803,7 @@ pas_espace:
 process_guillemets:
     
     // on va recopier le paramètre dans work_buffer
-    mov r5, work_buffer
+    mov r5, #work_buffer
 
     // raz lgr début de la chaine à copier = 0 et longueur copiée
     ldy #0
@@ -1836,15 +1834,15 @@ fin_de_parametre:
 
     // expanse si pas no_eval et ajoute à la liste
     // des paramètres
-    mov r1, work_buffer2
+    mov r1, #work_buffer2
     lda no_eval
     beq do_eval
-    mov r1, work_buffer
+    mov r1, #work_buffer
     jmp add_to_list
 do_eval:
-    call_bios(bios.str_expand, work_buffer)
+    swi str_expand, work_buffer
 add_to_list:
-    call_bios(bios.list_add, parameters.list)
+    swi list_add, parameters.list
     rts
 
     //-------------------------------------------------------------
@@ -1931,7 +1929,7 @@ lgr_copie:
 
 cmd_history:
 {
-    call_bios(bios.list_print, history_list)
+    swi list_print, history_list
     clc
     rts
 }
@@ -1946,31 +1944,31 @@ cmd_save_env:
 {
     needs_parameters(1)
     ldx #1
-    call_bios(bios.list_get, parameters.list)
-    mov r1, work_path
-    bios(bios.prep_path)
+    swi list_get, parameters.list
+    mov r1, #work_path
+    swi prep_path
     sec
-    mov r1, work_path
-    call_bios(bios.build_path, work_buffer)
-    mov r0, work_buffer
-    mov r1, cmd_cp.write_str
-    bios(bios.str_cat)
+    mov r1, #work_path
+    swi build_path, work_buffer
+    mov r0, #work_buffer
+    mov r1, #cmd_cp.write_str
+    swi str_cat
 
     sec
     ldx #3
-    call_bios(bios.file_open, work_buffer)
+    swi file_open, work_buffer
     bcc ok_open
     jmp erreur_open
 
 ok_open:
-    call_bios(bios.count_vars, var_names)
+    swi count_vars, var_names
     sta parcours_variables
     cmp #0
     bne ok_dump
     jmp fin_dump
 
 ok_dump:
-    mov r0, var_names
+    mov r0, #var_names
     ldx #3
     jsr CHKOUT
 
@@ -2058,10 +2056,10 @@ cmd_help:
     cmp #1
     beq no_params
     ldx #1
-    call_bios(bios.list_get, parameters.list)
+    swi list_get, parameters.list
     mov r5, r0
-    mov r1, work_buffer
-    call_bios(bios.str_expand, help_location)
+    mov r1, #work_buffer
+    swi str_expand, help_location
     mov r0, r1
     //bios(bios.pprintnl)
     lda bios.device
@@ -2076,7 +2074,7 @@ cmd_help:
     rts
 
 no_params:
-    call_bios(bios.pprintnl, help_message)
+    swi pprintnl, help_message
     lda #1
     sta cmd_dump.type_dump
     jmp cmd_dump

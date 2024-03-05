@@ -67,14 +67,15 @@ for line in hin:
     else:
         instruction = ''
 
-    # MOV
+    #----------------------------------------------------------------------------
+    # MOV instructions
+    #
+    # 
+    #----------------------------------------------------------------------------
 
     if instruction == 'mov':
-        #print(elems, len(elems))
         ptype0, pval0 = param_type(elems[1])
         ptype1, pval1 = param_type(elems[3])
-        #print("param 1 %s [%s]" % (ptype0, pval0))
-        #print("param 2 %s [%s]" % (ptype1, pval1))
         if ptype0 != 'a' and ptype1 != 'a':
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
         elif ptype0 == 'a' and ptype1 in ['s', 'si']:
