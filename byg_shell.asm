@@ -767,8 +767,8 @@ boucle_cat:
     clc
     swi buffer_read, buffer_hexdump
     bcs derniere_ligne_hex
+    jsr option_pagination
     jsr print_hex_buffer
-    add r1, #8
     ldx #2
     jsr CHKIN
     jmp suite_cat
