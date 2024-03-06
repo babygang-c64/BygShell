@@ -1340,7 +1340,7 @@ filtre_ko:
 pas_ft_size_name:
     swi filter, dir_entry.filename, filtre
     bcc filtre_ko
-    
+
     jmp print_name_no_size
 
 size40:

@@ -57,6 +57,7 @@
 .label str_rchr=41
 .label str_ncpy=42
 .label file_readline=43
+.label str_split=44
 
 bios_jmp:
     .word do_reset
@@ -103,6 +104,7 @@ bios_jmp:
     .word do_str_rchr
     .word do_str_ncpy
     .word do_file_readline
+    .word do_str_split
 
 * = * "BIOS code"
 
@@ -3267,6 +3269,74 @@ fin_lecture:
     sty work_buffer
     sec
     rts
+}
+
+//----------------------------------------------------
+// str_split : découpe une pstring en fonction d'un
+// séparateur
+// entrée = r0 pstring, X = séparateur
+// en sortie = r0 pstring découpée, A = nb d'éléments
+// C=0 pas de découpe, C=1 découpe effectuée
+//----------------------------------------------------
+
+do_str_split:
+{
+    stx separateur
+    swi str_len
+    sta lgr_total
+    sty decoupe
+    sty nb_items
+    iny
+    sty lgr_en_cours
+    dey
+    mov r1, r0
+    inc r0
+
+parcours:
+    lda lgr_total
+    beq fini
+    mov a, (r0++)
+    cmp separateur
+    bne pas_process_sep
+    lda #1
+    sta decoupe
+    jsr process_sep
+
+pas_process_sep:
+    inc lgr_en_cours
+    dec lgr_total
+    bne parcours
+
+    // traitement dernier
+    jsr process_sep
+
+fini:
+    ldc decoupe
+    lda nb_items
+    rts
+
+process_sep:
+    ldx lgr_en_cours
+    dex
+    txa
+    mov (r1), a
+    mov r1, r0
+    dec r1
+    ldx #0
+    stx lgr_en_cours
+    inc nb_items
+    rts
+
+separateur:
+    .byte 0
+lgr_total:
+    .byte 0
+lgr_en_cours:
+    .byte 0
+decoupe:
+    .byte 0
+nb_items:
+    .byte 0
 }
 
 //----------------------------------------------------

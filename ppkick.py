@@ -144,13 +144,12 @@ for line in hin:
             print('error', line)
             input('wait')
 
-    # STC
+    # LDC / STC
 
-    elif instruction == 'stc':
-        newline = 'stc(' + elems[1] + ')'
+    elif instruction in ['stc', 'ldc']:
+        newline = instruction + '(' + elems[1] + ')'
         hout.write(newline + '\n')
-        print('stc = %s' % newline)
-    
+
     # SWI
     
     elif instruction == 'swi':

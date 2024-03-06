@@ -50,6 +50,10 @@ swap r<n>, r<m> : swap registers
 ```
 stc <address> : store carry as 1 or 0 to address
 ```
+**Ltc**
+```
+ltc <address> : get carry from 1 or 0 at address
+```
 **Swi**
 ```
 swi <bios_function>                    : calls bios function
@@ -112,6 +116,11 @@ related BIOS operations :
 **str_len** : return length of pstring(r0) into A
 
     On exit : A = pstring length
+
+**str_split** : split pstring(r0) with separator X
+
+    On exit : C = 1 if split occurs, 
+              A = number of items after split
 
 ### system variables
 
