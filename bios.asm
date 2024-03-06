@@ -1471,7 +1471,8 @@ nb_copie:
 // %P<reg> = pstring à l'adresse du registre <reg>
 // %R<reg> = valeur hexa du registre <reg>
 // %% = %
-// %C<nibble> = couleur <nibble>
+// %C<nibble> = couleur <nibble> ou caractère de contrôle :
+//              R = reverse, N = normal
 //---------------------------------------------------------------
 
 do_str_expand:
@@ -1638,14 +1639,30 @@ pas_pstring:
     bne pas_couleur
     jsr consomme_car
 
+    mov a, (r0++)
+    
+    // exceptions : R = inverse, N = normal
+    cmp #'R'
+    bne pas_r
+    lda #18
+    jmp suite_couleur
+pas_r:
+    cmp #'N'
+    bne pas_n
+    lda #146
+    jmp suite_couleur
+
+pas_n:
     // C = couleur, insère le caractère de changement de couleur
     // fonction du nibble hexa qui suit
-    //getbyte_r(0)
-     
+
+    dec r0     
     jsr do_hex2int.conv_hex_nibble
     clc
     tay
     lda code_couleur,y
+
+suite_couleur:
     ldy #0
     jmp process_normal
 

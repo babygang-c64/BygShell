@@ -143,7 +143,6 @@ cmd_echo:
 boucle_params:
     ldx pos_param
     swi list_get, parameters.list
-    
     swi pprint
     inc pos_param
     dec nb_parameters
@@ -222,7 +221,7 @@ boucle_dump:
     
     // r0 += longueur + 1 = adresse valeur
     ldy #0
-    lda (zr0),y
+    mov a, (r0)
     clc
     adc #1
     add r0, a
@@ -236,9 +235,7 @@ boucle_dump:
     sta zr1h
 
     // et ajout 2 pour positionner r0 sur le suivant
-    clc
-    lda #2
-    add r0,a
+    add r0, #2
 
     push r0
 
@@ -259,6 +256,8 @@ suite_env:
     jsr option_pagine
 
     pop r0
+    jsr STOP
+    beq fin_dump
 
     dec parcours_variables
     bne boucle_dump
@@ -605,7 +604,7 @@ key_ok:
     jsr CHROUT
     dey
     bne key_ok
-
+    // ici il faudrait vider le buffer clavier
 pas_opt_p:
     rts
 
@@ -2126,7 +2125,7 @@ no_params:
 help_location:
     pstring("%VCONFIG%%P5.HLP")
 help_message:
-    pstring(" LIST OF COMMANDS TRY HELP [COMMAND] OR HELP ME")
+    pstring(" LIST OF COMMANDS TRY HELP <COMMAND>m OR HELP MEm")
 }
 
 //---------------------------------------------------------------
@@ -2199,7 +2198,7 @@ prep_buffer:
     jsr print_hex_buffer
     pop r0
 
-    jsr $FFE1      // RUN/STOP pressed?
+    jsr STOP      // RUN/STOP pressed?
     beq fin_hex
 
     // il en reste ?
@@ -2448,6 +2447,7 @@ work_pprint:
 .print "work_path.filename=$"+toHexString(work_path.filename)
 .print "work_path2=$"+toHexString(work_path2)
 .print "work_name=$"+toHexString(work_name)
+.print "work_pprint=$"+toHexString(work_pprint)
 
 //---------------------------------------------------------------
 // messages d'erreur
