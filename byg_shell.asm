@@ -405,9 +405,7 @@ cmd_cp:
     clc
     ldx #2
     swi file_open, work_buffer2
-    bcc pas_erreur_open_1
-    jmp erreur_open_1
-pas_erreur_open_1:
+    jcs erreur_open_1
 
     // path destination sans séparateur path<:>nom
     sec
@@ -465,8 +463,10 @@ erreur_open_2:
     swi file_close
     swi error, msg_error.write_error
     jmp close1
+
 erreur_open_1:
     swi error, msg_error.read_error
+
 close1:
     ldx #2
     swi file_close
@@ -744,10 +744,8 @@ do_cat:
     ldx #2
     clc
     swi file_open
-    bcc pas_erreur
-    jmp error
+    jcs error
 
-pas_erreur:
     // passe le canal en lecture
     ldx #2
     jsr CHKIN
@@ -836,9 +834,7 @@ error:
 option_pagination:
     lda cmd_cat.options
     and #OPT_P
-    beq pas_opt_p
-    jmp option_pagine
-pas_opt_p:
+    jne option_pagine
     rts
 
 option_numero:
@@ -847,10 +843,12 @@ option_numero:
     beq pas_opt_b
     lda work_buffer
     bne opt_b_numero_ok
+
 pas_opt_b:
     lda cmd_cat.options
     and #OPT_N
     beq pas_numero
+
 opt_b_numero_ok:
     inc num_lignes
     bne pas_inc

@@ -2639,10 +2639,7 @@ do_cut:
     sbc lgr_copie
     tax
     jsr do_str_alt_ncpy
-
-    jmp fin_extract_path_name
     
-
 fin_extract_path_name:
     clc
     rts
@@ -2928,8 +2925,7 @@ fin_test_listen:
     //-- après test listen, recherche type drive
     ldy #8
     lda devices,y
-    bne test_type_drive
-    jmp boucle_drive
+    jeq boucle_drive
 
 test_type_drive:
 
