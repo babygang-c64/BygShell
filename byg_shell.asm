@@ -677,6 +677,7 @@ msg_match:
 // E = affiche un $ en fin de ligne
 // B = numérote les lignes non vides
 // P = pagine la sortie
+// H = hexdump
 //----------------------------------------------------
 
 cmd_more:
@@ -704,7 +705,7 @@ options_ok:
 options:
     .byte 0
 options_cat:
-    pstring("BENP")
+    pstring("BENPH")
 }
 
 // do_cat : effectue la commande CAT unitaire, nom en R0
@@ -715,6 +716,7 @@ do_cat:
     .label OPT_E=2
     .label OPT_N=4
     .label OPT_P=8
+    .label OPT_H=16
 
     // initialisation
     ldy #0
@@ -740,8 +742,10 @@ do_cat:
     ldx #2
     clc
     swi file_open
-    bcs error
+    bcc pas_erreur
+    jmp error
 
+pas_erreur:
     // passe le canal en lecture
     ldx #2
     jsr CHKIN
@@ -750,10 +754,32 @@ do_cat:
     jsr READST
     bne end
 
+    mov r1, #0
+
 boucle_cat:
+    lda cmd_cat.options
+    and #OPT_H
+    beq pas_hexdump
+
+    ldx #2
+    lda #8
+    sta buffer_hexdump
+    clc
+    swi buffer_read, buffer_hexdump
+    bcs derniere_ligne_hex
+    jsr print_hex_buffer
+    add r1, #8
+    ldx #2
+    jsr CHKIN
+    jmp suite_cat
+    
+pas_hexdump:
+
     swi file_readline
     bcs derniere_ligne
     jsr affiche_ligne
+
+suite_cat:
     jsr STOP
     beq end
     bne boucle_cat
@@ -774,8 +800,14 @@ pas_option_e:
     lda #13
     jmp CHROUT
 
+derniere_ligne_hex:
+    jsr print_hex_buffer
+    jmp fin_cat
+
 derniere_ligne:
-    jsr affiche_ligne    
+    jsr affiche_ligne
+
+fin_cat:
     lda #0
 end:
     and #2
@@ -835,6 +867,8 @@ pas_numero:
 
 num_lignes:
     .word 0
+buffer_hexdump:
+    pstring("01234567")
 }
 
 //----------------------------------------------------

@@ -56,6 +56,7 @@
 .label str_ins=40
 .label str_rchr=41
 .label str_ncpy=42
+.label file_readline=43
 
 bios_jmp:
     .word do_reset
@@ -101,6 +102,7 @@ bios_jmp:
     .word do_str_ins
     .word do_str_rchr
     .word do_str_ncpy
+    .word do_file_readline
 
 * = * "BIOS code"
 
@@ -3349,7 +3351,7 @@ pos_lecture:
 do_buffer_read:
 {
     stc lecture_ligne
-    jsr CHKIN
+    // jsr CHKIN
 
     swi str_len
     sta lgr_max
@@ -3369,7 +3371,7 @@ lecture:
 pas_test:
     ldy nb_lu
     sta (zr0),y
-    cpy #lgr_max:255
+    cpy lgr_max:#255
     beq fin_buffer
     bne lecture
 fin_ligne:
