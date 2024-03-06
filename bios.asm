@@ -1046,17 +1046,13 @@ get_next:
     beq get_next
 
     cmp #$0d
-    bne pas_fin_input
-    jmp fin_input
-
-pas_fin_input:
+    jeq fin_input
 
     //-- INS -----
     cmp #INS
     bne pas_ins
 
     ldx write_x
-    //cmp max_x
     cpx max_x
     beq get_next
 
@@ -1525,10 +1521,8 @@ special:
 
     getbyte_r(0)
     cmp #'%'
-    bne pas_pct
-    jmp process_normal
+    jeq process_normal
 
-pas_pct:
     cmp #'R'
     bne pas_registre
 
@@ -1570,9 +1564,7 @@ pas_pct:
 
 pas_registre:
     cmp #'V'
-    beq process_variable
-    jmp pas_variable
-process_variable:
+    jne pas_variable
     jsr consomme_car
 
     // V = variable : récupère la valeur d'une variable
@@ -1617,6 +1609,7 @@ copie_var:
     inc lgr_output
     dec lgr_copie
     bne copie_var
+
 pas_copie_var:
     jmp process_suite
 
@@ -1675,7 +1668,7 @@ fin_erreur:
 code_couleur:
     .byte 90,5,28,159,156,30,31,158
     .byte 150,149,129,151,152,153,154,155
-* = * "longueurs"
+
 lgr_copie:
     .byte 0
 lgr_input:
@@ -1798,9 +1791,6 @@ do_pprinthex8a:
     rts
 }
 
-.print "do_pprinthex8a=$"+toHexString(do_pprinthex8a)
-.print "do_pprinthex=$"+toHexString(do_pprinthex)
-
 //---------------------------------------------------------------
 // var_get : lecture variable
 // r0 : nom variable -> r1 : contenu et C = 1
@@ -1835,10 +1825,8 @@ do_var_set:
     mov rdest, r1
     // var existe ?
     jsr lookup_var
-    bcc creation
-    jmp pas_creation
+    jcs pas_creation
 
-creation:
     // création : 
     // copie nom variable
     mov r1, #ptr_last_variable

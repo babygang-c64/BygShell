@@ -1662,11 +1662,14 @@ script_execute:
     ldx #7
     clc
     swi file_open
-    bcc next_line
-    jmp error
+    jcs error
+
 next_line:
     ldx #7
+    jsr CHKIN
     sec
+    lda #255
+    sta input_buffer
     swi buffer_read, input_buffer
     bcs fini
 
