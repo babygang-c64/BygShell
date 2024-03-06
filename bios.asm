@@ -3314,11 +3314,11 @@ lgr_chaine:
 do_buffer_write:
 {
     jsr CHKOUT
-    ldy #1
-    sty pos_lecture
-    dey
-    lda (zr0),y
+    swi str_len
     sta nb_lu
+    iny
+    sty pos_lecture
+
 ecriture:
     ldy pos_lecture
     lda (zr0),y
@@ -3339,9 +3339,10 @@ pos_lecture:
 //----------------------------------------------------
 // buffer_read : lecture bufferisée
 // entrée : R0 = buffer de lecture (pstring)
+// longueur buffer = pstring, longueur = max buffer
 // C=0 lecture normale, C=1 arrêt si 0d ou 0a (ligne)
 // X = id fichier
-// sortie : buffer à jour
+// sortie : buffer à jour et longueur à jour
 // C=0 si pas fini, C=1 si EOF
 //----------------------------------------------------
 
@@ -3350,8 +3351,9 @@ do_buffer_read:
     stc lecture_ligne
     jsr CHKIN
 
-    lda #0
-    sta nb_lu
+    swi str_len
+    sta lgr_max
+    sty nb_lu
 
 lecture:
     jsr READST
@@ -3367,7 +3369,7 @@ lecture:
 pas_test:
     ldy nb_lu
     sta (zr0),y
-    cpy #255
+    cpy #lgr_max:255
     beq fin_buffer
     bne lecture
 fin_ligne:
@@ -3377,8 +3379,6 @@ fin_buffer:
     ldy #0
     sta (zr0),y
     jsr CLRCHN
-//    lda #'.'
-//    jsr CHROUT
     jsr READST
     bne fin_lecture
     clc

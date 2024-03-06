@@ -433,6 +433,8 @@ cmd_cp:
 copie_fichier:
     ldx #2
     clc
+    lda #255
+    sta work_buffer
     swi buffer_read, work_buffer
     stc copie_finie
     ldx #3
@@ -737,7 +739,7 @@ do_cat:
     // ouverture en lecture, nom dans r0
     ldx #2
     clc
-    jsr bios.do_file_open
+    swi file_open
     bcs error
 
     // passe le canal en lecture
@@ -749,7 +751,7 @@ do_cat:
     bne end
 
 boucle_cat:
-    jsr bios.do_file_readline
+    swi file_readline
     bcs derniere_ligne
     jsr affiche_ligne
     jsr STOP
@@ -2174,9 +2176,6 @@ bytes:
 
 print_hex_buffer:
 {
-    lda #0
-    sta nb_bytes
-
     swi str_len 
     sta nb_total
     inc r0
@@ -2190,55 +2189,52 @@ aff_line:
     lda #32
     jsr CHROUT
 
+    push r0
+    ldx #8
 aff_bytes:
-    mov a, (r0++)
-    ldx nb_bytes
-    sta bytes,x
-    jsr bios.do_pprinthex8a
-    lda #32
-    jsr CHROUT
-    dec nb_total
-    beq fin_print
-    inc nb_bytes
-    lda nb_bytes
-    cmp #8
-    bne aff_bytes
+    lda nb_total
+    bne pas_fini_hex
 
-    lda #0
-    sta nb_bytes
-    jsr print_hex_text
-
-    add r1, #8
-    jmp aff_line
-
-fin_print:
-    ldx nb_bytes
-    cpx #7
-    beq ok_fin
-    lda #0
-    sta bytes,x
     lda #'.'
     jsr CHROUT
     jsr CHROUT
+    jmp suite_hex
+
+pas_fini_hex:
+    dec nb_total
+    mov a, (r0++)
+    jsr bios.do_pprinthex8a
+
+suite_hex:
     lda #32
     jsr CHROUT
-    inc nb_bytes
-    lda nb_bytes
-    cmp #7
-    bne fin_print
+    dex
+    bne aff_bytes
 
-ok_fin:
+    pop r0
+    dec r0
+    ldx #8
     jsr print_hex_text
+
     lda #13
     jsr CHROUT
-
+    add r1, #8
     clc
     rts
 
 print_hex_text:
-    ldx #0
+    swi str_len
+    sta nb_total
+    inc r0
+    
+    ldx #8
 aff_txt:
-    lda bytes,x
+    lda nb_total
+    beq aff_txt_fini
+    mov a, (r0++)
+    dec nb_total
+
+aff_txt_fini:
     cmp #$20
     bpl pas_moins
     lda #'.'
@@ -2250,15 +2246,10 @@ pas_moins:
     lda #'.'
 pas_plus:
     jsr CHROUT
-    inx
-    cpx #8
+    dex
     bne aff_txt
     rts
 
-bytes:
-    .fill 8,0
-nb_bytes:
-    .byte 0
 nb_total:
     .byte 0
 }
