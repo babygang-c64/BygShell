@@ -1,0 +1,6 @@
+
+rm : REMOVE FILE(S)
+
+RM [FILE]...
+
+REMOVE FILE(S) FROM DISK.
