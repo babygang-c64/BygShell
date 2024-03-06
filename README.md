@@ -13,7 +13,7 @@ zr0h to zr1h : higher bytes of registers
 
 ### macro instructions with pre-processor for 16 bit registers
 
-**Mov**
+**MOV**
 ```
 mov r<n>, r<m>      : register n = register m
 mov r<n>, #<addr>   : register n = address
@@ -30,31 +30,30 @@ mov <addr>, #<val>  : copy value to addr
 
 Warning : indirect MOV operations rely on Y beeing set to 0, if not then Y will be added to address
 
-**Add**
+**ADD**
 ```
 add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
 add r<n>, a         : add a to register n
 add <addr>, a       : add a to value at address <addr>
 todo : add <addr>, #<imm> and add <addr>, <addr2>
 ```
-**Inc, Dec**
+**INC, DEC**
 ```
 inc r<n> : increment register
 dec r<n> : decrement register
 ```
-**Swap**
+**SWAP**
 ```
 swap r<n>, r<m> : swap registers
 ```
-**Stc**
+**STC / LDC**
 ```
 stc <address> : store carry as 1 or 0 to address
+ldc <address> : get carry from 1 or 0 at address
 ```
-**Ltc**
-```
-ltc <address> : get carry from 1 or 0 at address
-```
-**Swi**
+**JNE / JEQ / JCC / JCS**
+long branches
+**SWI**
 ```
 swi <bios_function>                    : calls bios function
 swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 = addr2
