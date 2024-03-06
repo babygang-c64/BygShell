@@ -681,6 +681,7 @@ msg_match:
 // B = numérote les lignes non vides
 // P = pagine la sortie
 // H = hexdump
+// A = lecture adresse début dans fichier pour hexdump
 //----------------------------------------------------
 
 cmd_more:
@@ -708,7 +709,7 @@ options_ok:
 options:
     .byte 0
 options_cat:
-    pstring("BENPH")
+    pstring("BENPHA")
 }
 
 // do_cat : effectue la commande CAT unitaire, nom en R0
@@ -720,6 +721,7 @@ do_cat:
     .label OPT_N=4
     .label OPT_P=8
     .label OPT_H=16
+    .label OPT_A=32
 
     // initialisation
     ldy #0
@@ -757,7 +759,7 @@ pas_erreur:
     jsr READST
     bne end
 
-    mov r1, #0
+    jsr option_start_address
 
 boucle_cat:
     lda cmd_cat.options
@@ -866,6 +868,18 @@ pas_inc:
     lda #32
     jsr CHROUT
 pas_numero:
+    rts
+
+option_start_address:
+    mov r1, #0
+    lda cmd_cat.options
+    and #OPT_A
+    beq pas_opt_A
+    jsr CHRIN
+    sta zr1l
+    jsr CHRIN
+    sta zr1h
+pas_opt_A:
     rts
 
 num_lignes:
