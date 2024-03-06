@@ -1,6 +1,16 @@
 # BygShell
 Shell like commands for the C64
 
+## Shell commands
+
+### Script and external commands execution
+
+When a command is not found in the internal commands list then a lookup is done on disk in the current directory.
+If the command name is a script name (ends with .sh) then all commands from the script are read and executed.
+If the command name is a binary then it is launched (for now starting at $080d) Must have a basic header with a SYS.
+
+### Internal commands
+
 ## Data structures
 
 ### 16 bit registers
