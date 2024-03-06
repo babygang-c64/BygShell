@@ -1211,8 +1211,10 @@ options_ok:
 
 pas_de_parametres:
 
-    lda #0
+    lda #1
     sta filtre
+    lda #'*'
+    sta filtre+1
     lda parameters.list
     cmp #2
     bne pas_filtre
@@ -1299,10 +1301,9 @@ pas_blocs:
     beq pas_ft_size
 
     jsr set_dir_color
-    //BRK//*
-    mov r1, #dir_entry.filename
-    //swi filter, filtre
-    //bcs filtre_ko
+    
+    swi filter, dir_entry.filename, filtre
+    bcc filtre_ko
 
     lda options
     and #OPT_DIR
@@ -1337,6 +1338,9 @@ filtre_ko:
     jmp do_next
 
 pas_ft_size_name:
+    swi filter, dir_entry.filename, filtre
+    bcc filtre_ko
+    
     jmp print_name_no_size
 
 size40:
