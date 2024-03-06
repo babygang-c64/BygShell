@@ -136,7 +136,12 @@ related BIOS operations :
 
 **var_del** : deletes variable #A
 
-Helper BIOS functions :
+### Helper BIOS functions :
 
 **is_digit**
 
+C=1 if A is a digit
+
+**set_bit**
+
+Y = bit to set in A
