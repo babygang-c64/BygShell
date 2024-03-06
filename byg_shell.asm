@@ -203,10 +203,7 @@ cmd_dump:
     swi var_count, internal_commands
     sta parcours_variables
     cmp #0
-    bne dump_cmd
-    jmp fin_dump
-
-dump_cmd:
+    jeq fin_dump
     mov r0, #internal_commands
     jmp boucle_dump
 

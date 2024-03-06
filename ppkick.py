@@ -144,9 +144,9 @@ for line in hin:
             print('error', line)
             input('wait')
 
-    # LDC / STC
+    # LDC / STC / JNE / JEQ / JCC / JCS
 
-    elif instruction in ['stc', 'ldc']:
+    elif instruction in ['stc', 'ldc', 'jne', 'jeq', 'jcc', 'jcs']:
         newline = instruction + '(' + elems[1] + ')'
         hout.write(newline + '\n')
 
