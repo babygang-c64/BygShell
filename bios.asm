@@ -3362,6 +3362,7 @@ lecture:
     bne fin_lecture
     inc nb_lu
     jsr CHRIN
+    //jsr CHROUT
     ldy lecture_ligne
     beq pas_test
     cmp #13

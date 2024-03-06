@@ -399,8 +399,18 @@ cmd_cp:
     // path source sans séparateur path<:>nom
     sec
     mov r1, #work_path
-    swi build_path, work_buffer
+    swi build_path, work_buffer2
     //swi pprintnl, work_buffer
+
+    // open fichier en entrée
+    
+    swi set_device_from_path, work_path
+    clc
+    ldx #2
+    swi file_open, work_buffer2
+    bcc pas_erreur_open_1
+    jmp erreur_open_1
+pas_erreur_open_1:
 
     // path destination sans séparateur path<:>nom
     sec
@@ -420,18 +430,11 @@ cmd_cp:
     swi file_open, work_buffer2
     bcs erreur_open_2
 
-    // open fichier en entrée
-
-    swi set_device_from_path, work_path
-    clc
-    ldx #2
-    swi file_open, work_buffer
-    bcs erreur_open_1
-
     // copie fichier 1 vers 2
 
 copie_fichier:
     ldx #2
+    jsr CHKIN
     clc
     lda #255
     sta work_buffer
