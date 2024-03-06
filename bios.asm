@@ -176,7 +176,7 @@ device_ok:
     jmp shell.toplevel
 
 text_banner:
-    pstring("BYG SHELLmV%VVERSION%m")
+    pstring("%CR%HFA %HC2YG %HD3HELL V%VVERSION%                        %CN")
 }
 
 //---------------------------------------------------------------
@@ -432,6 +432,7 @@ do_error:
 //---------------------------------------------------------------
 // hex2int : conversion pstring 16bits hexa en entier
 // entrée : pstring dans R0, sortie : R0 = valeur
+// do_hex2int.conv_hex_byte
 //---------------------------------------------------------------
 
 do_hex2int:
@@ -1473,6 +1474,7 @@ nb_copie:
 // %% = %
 // %C<nibble> = couleur <nibble> ou caractère de contrôle :
 //              R = reverse, N = normal
+// %H<hex> = caractère code <hex>
 //---------------------------------------------------------------
 
 do_str_expand:
@@ -1634,39 +1636,45 @@ pas_variable:
 
     jmp do_copy_var
 
+    // C = couleur, insère le caractère de changement de couleur
+    // fonction du nibble hexa qui suit ou N / R
+
 pas_pstring:
     cmp #'C'
     bne pas_couleur
     jsr consomme_car
 
     mov a, (r0++)
-    
-    // exceptions : R = inverse, N = normal
-    cmp #'R'
-    bne pas_r
-    lda #18
-    jmp suite_couleur
-pas_r:
-    cmp #'N'
-    bne pas_n
-    lda #146
-    jmp suite_couleur
+    sta ztmp
 
-pas_n:
-    // C = couleur, insère le caractère de changement de couleur
-    // fonction du nibble hexa qui suit
+    ldy #0
+    ldx #0
+lookup_code:
+    lda corresp_code, x
+    beq code_hs
+    cmp ztmp
+    beq code_trouve
+    inx
+    bne lookup_code
+code_hs:
+    lda #'?'
+    jmp process_normal
+code_trouve:
+    lda code_couleur,x
+    jmp process_normal
 
-    dec r0     
-    jsr do_hex2int.conv_hex_nibble
-    clc
-    tay
-    lda code_couleur,y
+    // H = caractère valeur <hex> qui suit (2 octets)
+pas_couleur:
+    cmp #'H'
+    bne pas_hex
 
-suite_couleur:
+    jsr consomme_car
+    jsr consomme_car
+    jsr do_hex2int.conv_hex_byte
     ldy #0
     jmp process_normal
 
-pas_couleur:
+pas_hex:
     clc
     rts
 
@@ -1682,9 +1690,13 @@ fin_erreur:
     sec
     rts
 
+corresp_code:
+    .text "0123456789ABCDEFRNH"
+    .byte 0
 code_couleur:
     .byte 90,5,28,159,156,30,31,158
     .byte 150,149,129,151,152,153,154,155
+    .byte 18,146,147
 
 lgr_copie:
     .byte 0
