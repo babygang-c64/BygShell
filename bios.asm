@@ -62,6 +62,7 @@
 .label directory_set_filter=46
 .label directory_get_entry=47
 .label directory_close=48
+.label is_filter=49
 
 bios_jmp:
     .word do_reset
@@ -113,6 +114,7 @@ bios_jmp:
     .word do_directory_set_filter
     .word do_directory_get_entry
     .word do_directory_close
+    .word do_is_filter
 
 * = * "BIOS code"
 
@@ -234,6 +236,29 @@ fini:
 
 longueur:
     .byte 0
+}
+
+//---------------------------------------------------------------
+// is_filter : C=1 si filtre fichier dans R0 (? ou *)
+//---------------------------------------------------------------
+
+do_is_filter:
+{
+    swi str_len
+    tay
+test_str:
+    lda (zr0),y
+    cmp #'*'
+    beq filtre_trouve    
+    cmp #'?'
+    beq filtre_trouve    
+    dey
+    bne test_str
+    clc
+    rts
+filtre_trouve:
+    sec
+    rts
 }
 
 //---------------------------------------------------------------
@@ -3832,6 +3857,7 @@ do_padding:
 
 do_directory_open:
 {
+    push r0
     swi str_cpy, directory.default_filter, directory.filter
     ldx #7
     clc
@@ -3839,6 +3865,7 @@ do_directory_open:
     bcc open_ok
     swi file_close
     swi error, msg_error.read_error
+    pop r0
     sec
     rts
 
@@ -3849,6 +3876,7 @@ open_ok:
     sta directory.diskname
     lda #255
     sta directory.filter_types
+    pop r0
     clc
     rts
 }
@@ -4036,6 +4064,7 @@ types_code:
 .label TYPE_REL=8
 .label TYPE_DIR=16
 .label TYPE_ERR=128
+.label TYPE_FILES=1+2+4
 
 filter_types:
     .byte 255

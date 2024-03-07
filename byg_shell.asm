@@ -538,26 +538,58 @@ options_ok:
 
 boucle_params:
 {
-    lda zr0l
-    sta jump
-    lda zr0h
-    sta jump+1
+    mov jump, r0
     // boucle si il y a plusieurs noms de fichiers
     ldx #1
     stx pos_cat
+
 encore_cat:
     swi list_get, parameters.list
-    jsr jump:$fce2
+    swi is_filter
+    bcc no_filter
+
+    // filtre : recherche dans directory
+    swi directory_open
+    ldx #bios.directory.TYPE_FILES
+    swi directory_set_filter
+dir_suite:
+    swi directory_get_entry
+    bcs dir_fin
+    beq dir_fin
+    bmi dir_suite
+
+    mov r0, #bios.directory.entry.filename
+    jsr do_jump
+    bcs fin_cat
+    ldx #7
+    jsr CHKIN
+
+    jmp dir_suite
+
+dir_fin:
+    swi directory_close
+    jmp next_param
+
+no_filter:
+    jsr do_jump
     bcs fin_cat
 
+next_param:
     inc pos_cat
     ldx pos_cat
     cpx parameters.list
-    bne encore_cat
+    jne encore_cat
     clc
 
     // fin avec erreur
 fin_cat:
+    rts
+
+do_jump:
+    jsr jump:$fce2
+    bcs erreur_exec
+    clc
+erreur_exec:
     rts
 
 pos_cat:
