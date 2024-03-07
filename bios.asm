@@ -3845,17 +3845,22 @@ do_directory_open:
 open_ok:
     ldx #7
     jsr CHKIN
+    lda #2
+    sta directory.diskname
+    lda #255
+    sta directory.filter_types
     clc
     rts
 }
 
 //---------------------------------------------------------------
 // directory_set_filter : change le filtre
-// r0 = nouveau filtre
+// en entrée r0 = nouveau filtre nom et X = filtre types
 //---------------------------------------------------------------
 
 do_directory_set_filter:
 {
+    stx directory.filter_types
     mov r1, #directory.filter
     swi str_cpy
     clc
@@ -3949,9 +3954,37 @@ suite_update:
     lda status_guillemets
     beq fin_entry
 
+    // détermine le type d'entrée
+
+    ldx #0
+    stx directory.entry.filetype
+det_type:
+    lda directory.types,x
+    beq fin_types
+    cmp directory.entry.type+1
+    beq type_trouve
+    inx
+    bne det_type
+type_trouve:
+    lda directory.types_code,x
+    sta directory.entry.filetype
+fin_types:
+
+    // traite le cas du nom de disque
+    lda directory.diskname
+    beq diskname_passe
+    dec directory.diskname
+diskname_passe:
+    // filtre types
+    lda directory.entry.filetype
+    and directory.filter_types
+    beq filtre_ko
+
     // test filtre, retour $80 si KO
     swi str_pat, directory.entry.filename, directory.filter
     bcs fin_entry
+
+filtre_ko:
     lda #$80
     clc
     rts
@@ -3987,6 +4020,25 @@ do_directory_close:
 
 directory:
 {
+    // indicateur entrée = diskname
+diskname:
+    .byte 0
+    // types d'entrée
+types:
+    .text "PSURD*"
+    .byte 0
+types_code:
+    .byte 1,2,4,8,16,128
+
+.label TYPE_PRG=1
+.label TYPE_SEQ=2
+.label TYPE_USR=4
+.label TYPE_REL=8
+.label TYPE_DIR=16
+.label TYPE_ERR=128
+
+filter_types:
+    .byte 255
 filter:
     pstring("0123456789ABCDEF")
 default_filter:
@@ -4002,6 +4054,8 @@ entry:
         pstring("0123456789ABCDEF")
     type:
         pstring("*DIR<")
+    filetype:
+        .byte 0
     }
 }
 

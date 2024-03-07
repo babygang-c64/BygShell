@@ -1581,20 +1581,6 @@ pas_copie_history:
 
 toplevel:
 
-    swi directory_open
-    swi directory_set_filter, filtre_dir
-dir_suite:
-    swi directory_get_entry
-    bcs dir_fin
-    beq dir_fin
-    bmi dir_suite
-    swi pprintnl, bios.directory.entry.filename
-    bcc dir_suite
-dir_fin:
-    swi directory_close
-    
-filtre_dir:
-    pstring("*XT*")
     // affiche le prompt
     swi var_get, varprompt
     mov r0, r1
