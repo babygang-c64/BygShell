@@ -444,21 +444,44 @@ Y = bit to set in A
 **CMD**
 
 **CAT**
+```
+cat <file> [<file> ...]
 
+print file(s) contents to screen
+    options : 
+    N = numbers all lines
+    E = print $ at EOL
+    B = numbers all non empty lines
+    P = paginates output
+    H = hexdump
+    A = read C64 binary start address for hexdump
+```
 **MKDIR**
-
+```
+mkdir <directory>
+create subdirectory
+```
 **RMDIR**
-
+```
+rmdir <directory>
+remove subdirectory
+```
 **RM**
-
+```
+rm <file>
+erase file
+```
 **MEM**
-
+```
+mem <start-address> [<end-address>]
+Dump memory to screen
+```
 **CP**
 
 **CLEAR**
-
-**MORE**
-
+```
+Clear screen
+```
 **SAVEENV**
 
 **INPUT**
@@ -480,4 +503,8 @@ Y = bit to set in A
 **LL**
 ```
     Alias for LS -L
+```
+**MORE**
+```
+    Alias for CAT -P
 ```

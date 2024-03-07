@@ -552,6 +552,7 @@ encore_cat:
     swi directory_open
     ldx #bios.directory.TYPE_FILES
     swi directory_set_filter
+
 dir_suite:
     swi directory_get_entry
     bcs dir_fin
@@ -563,7 +564,6 @@ dir_suite:
     bcs fin_cat
     ldx #7
     jsr CHKIN
-
     jmp dir_suite
 
 dir_fin:
@@ -596,9 +596,11 @@ pos_cat:
     .byte 0
 }
 
+//----------------------------------------------------
 // option_pagine : gestion option de pagination pour les
 // affichages dans CAT / LS
-// entrée : si C=1 alors initalisation
+// entrée : si C=1 alors initialisation
+//----------------------------------------------------
 
 option_pagine:
 {
