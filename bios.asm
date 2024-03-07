@@ -2726,6 +2726,8 @@ do_filter:
     iny
     sty pos_wild
     sty pos_string
+    sty pos_cp
+    sty pos_mp
 
 while1:
     lda pos_string
@@ -2759,14 +2761,13 @@ while2:
     beq end_while2
 
     ldy pos_wild
-    cmp lgr_wild
-    beq pas_etoile
+    //cmp lgr_wild
+    //beq pas_etoile
     lda (zwild),y
     cmp #'*'
     bne pas_etoile
 
     inc pos_wild
-
     lda pos_wild
     cmp lgr_wild
     bne suite
@@ -2782,8 +2783,9 @@ suite:
 
 pas_etoile:
     ldy pos_wild
-    cpy lgr_wild
-    beq end_while2
+    //cpy lgr_wild
+    //beq end_while2
+
     lda (zwild),y
     cmp #'?'
     beq ok_comp
@@ -2792,7 +2794,7 @@ pas_etoile:
     beq end_while2
     cmp (zstring),y
     beq ok_comp
-
+    
 not_ok_comp:
     lda pos_mp
     sta pos_wild
@@ -2803,7 +2805,7 @@ not_ok_comp:
 
 ok_comp:
     inc pos_wild
-    inc pos_string
+    inc pos_string    
     jmp while2
 
 end_while2:
@@ -2827,6 +2829,31 @@ end_while3:
 fini_wild:
     sec
     rts
+
+debug_values:
+    lda #'S'
+    jsr CHROUT
+    lda pos_string
+    ora #'0'
+    jsr CHROUT
+    lda #'W'
+    jsr CHROUT
+    lda pos_wild
+    ora #'0'
+    jsr CHROUT
+    lda #'C'
+    jsr CHROUT
+    lda pos_cp
+    ora #'0'
+    jsr CHROUT
+    lda #'M'
+    jsr CHROUT
+    lda pos_mp
+    ora #'0'
+    jsr CHROUT
+
+    lda #13
+    jmp CHROUT
 
 lgr_string:
     .byte 0
