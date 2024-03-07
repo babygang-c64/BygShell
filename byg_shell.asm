@@ -2190,10 +2190,7 @@ cmd_mem:
     ldx #2
     swi list_get, parameters.list
     swi hex2int
-    lda zr0l
-    sta stop_address
-    lda zr0h
-    sta stop_address+1
+    mov stop_address, r0
     ldx #1
     swi list_get, parameters.list
     swi hex2int
@@ -2210,9 +2207,9 @@ juste_8:
     pop r0
 
 boucle_hex:
-
     mov r1, r0
     ldx #0
+
 prep_buffer:
     mov a, (r0++)
     sta bytes+1,x
@@ -2224,7 +2221,8 @@ prep_buffer:
     jsr print_hex_buffer
     pop r0
 
-    jsr STOP      // RUN/STOP pressed?
+    // check run/stop
+    jsr STOP
     beq fin_hex
 
     // il en reste ?
