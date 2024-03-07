@@ -653,7 +653,7 @@ cmd_filter:
     mov r2, r1
     swi var_get,var_pattern
     mov r0, r2
-    swi filter
+    swi str_pat
     bcc no_match
     swi pprintnl, msg_match
 no_match:
@@ -1264,10 +1264,7 @@ next:
 pas_opt_page:
 
     jsr do_read_dir_entry
-    bcc no_exit
-    jmp exit
-
-no_exit:
+    jcs exit
     bne pas_blocs
 
     // affichage blocks free
@@ -1296,7 +1293,7 @@ pas_blocs:
 
     jsr set_dir_color
     
-    swi filter, dir_entry.filename, filtre
+    swi str_pat, dir_entry.filename, filtre
     bcc filtre_ko
 
     lda options
@@ -1332,7 +1329,7 @@ filtre_ko:
     jmp do_next
 
 pas_ft_size_name:
-    swi filter, dir_entry.filename, filtre
+    swi str_pat, dir_entry.filename, filtre
     bcc filtre_ko
 
     jmp print_name_no_size
@@ -1584,6 +1581,20 @@ pas_copie_history:
 
 toplevel:
 
+    swi directory_open
+    swi directory_set_filter, filtre_dir
+dir_suite:
+    swi directory_get_entry
+    bcs dir_fin
+    beq dir_fin
+    bmi dir_suite
+    swi pprintnl, bios.directory.entry.filename
+    bcc dir_suite
+dir_fin:
+    swi directory_close
+    
+filtre_dir:
+    pstring("*XT*")
     // affiche le prompt
     swi var_get, varprompt
     mov r0, r1

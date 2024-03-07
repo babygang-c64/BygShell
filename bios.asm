@@ -46,7 +46,7 @@
 .label buffer_read=30
 .label buffer_write=31
 .label str_expand=32
-.label filter=33
+.label str_pat=33
 .label print_path=34
 .label str_cmp=35
 .label str_chr=36
@@ -58,6 +58,10 @@
 .label str_ncpy=42
 .label file_readline=43
 .label str_split=44
+.label directory_open=45
+.label directory_set_filter=46
+.label directory_get_entry=47
+.label directory_close=48
 
 bios_jmp:
     .word do_reset
@@ -93,7 +97,7 @@ bios_jmp:
     .word do_buffer_read
     .word do_buffer_write
     .word do_str_expand
-    .word do_filter
+    .word do_str_pat
     .word do_print_path
     .word do_str_cmp
     .word do_str_chr
@@ -105,6 +109,10 @@ bios_jmp:
     .word do_str_ncpy
     .word do_file_readline
     .word do_str_split
+    .word do_directory_open
+    .word do_directory_set_filter
+    .word do_directory_get_entry
+    .word do_directory_close
 
 * = * "BIOS code"
 
@@ -2706,12 +2714,12 @@ mode_path:
 }
 
 //---------------------------------------------------------------
-// filter : pattern matching, C=1 si OK, C=0 sinon
+// str_pat : pattern matching, C=1 si OK, C=0 sinon
 // r0 : chaine à tester
 // r1 : pattern
 //---------------------------------------------------------------
 
-do_filter:
+do_str_pat:
 {
     .label zstring = zr0
     .label zwild = zr1
@@ -3808,8 +3816,196 @@ do_padding:
 }
 
 //===============================================================
+// directory routines :
+//
+// open
+// set_filter
+// get_entry
+// close
+// 
+// Uses channel #7
+//===============================================================
+
+//---------------------------------------------------------------
+// directory_open : lecture répertoire
+//---------------------------------------------------------------
+
+do_directory_open:
+{
+    swi str_cpy, directory.default_filter, directory.filter
+    ldx #7
+    clc
+    swi file_open, directory.dirname
+    bcc open_ok
+    swi file_close
+    swi error, msg_error.read_error
+    sec
+    rts
+
+open_ok:
+    ldx #7
+    jsr CHKIN
+    clc
+    rts
+}
+
+//---------------------------------------------------------------
+// directory_set_filter : change le filtre
+// r0 = nouveau filtre
+//---------------------------------------------------------------
+
+do_directory_set_filter:
+{
+    mov r1, #directory.filter
+    swi str_cpy
+    clc
+    rts
+}
+
+//---------------------------------------------------------------
+// directory_get_entry : lecture entrée répertoire, retour r0
+//
+// C=1 : fin
+// A=0 : blocks free
+//---------------------------------------------------------------
+
+do_directory_get_entry:
+{
+    jsr READST
+    beq lecture_ok
+    sec
+    rts
+
+lecture_ok:
+    // lecture 32 octets = 1 entrée de répertoire
+    ldy #0
+lecture_buffer:
+    jsr CHRIN
+    sta buffer_entry,y
+    iny
+    cpy #32
+    bne lecture_buffer
+
+    // update size
+    mov directory.entry.size, buffer_entry+2
+
+    // update nom et type par automate sur status
+    // des guillemets :
+    // 0 = pas encore rencontré = rien
+    // 1 = ouvert = copie nom
+    // 2 = fermé = copie type
+
+    ldx #0
+    stx status_guillemets
+    ldy #4
+
+update_nom:
+    lda buffer_entry,y
+    cmp #34
+    beq traite_guillemets
+
+    // si guill = 0 : continue
+    lda status_guillemets
+    beq suite_update
+
+    // si guill = 1 : copie dans nom
+    cmp #1
+    bne apres_nom
+    lda buffer_entry,y
+    sta directory.entry.filename+1,x
+    inx
+    bne suite_update
+
+    // si guill = 2 : copie dans type
+    // sauf si espace ou 0
+apres_nom:
+    lda buffer_entry,y
+    beq suite_update
+    cmp #32
+    beq suite_update
+    sta directory.entry.type+1,x
+    inx
+    bne suite_update
+
+    // guillemets : incrémente
+traite_guillemets:
+    inc status_guillemets
+    lda status_guillemets
+    cmp #2
+    bne suite_update
+
+    // si 2 = fin nom, màj longueur
+    // et redémarre à 0 pour type
+    stx directory.entry.filename
+    ldx #0
+
+    // suite update_nom
+suite_update:
+    iny
+    cpy #32
+    bne update_nom
+    stx directory.entry.type
+
+    lda status_guillemets
+    beq fin_entry
+
+    // test filtre, retour $80 si KO
+    swi str_pat, directory.entry.filename, directory.filter
+    bcs fin_entry
+    lda #$80
+    clc
+    rts
+
+fin_entry:
+    lda status_guillemets
+    clc
+    rts
+
+status_guillemets:
+    .byte 0
+buffer_entry:
+    .fill 32,0
+}
+
+//---------------------------------------------------------------
+// directory_close : fermeture répertoire
+//---------------------------------------------------------------
+
+do_directory_close:
+{
+    ldx #7
+    swi file_close
+    clc
+    rts
+}
+
+//===============================================================
 // DATAS BIOS namespace
 //===============================================================
+
+// directory reading
+
+directory:
+{
+filter:
+    pstring("0123456789ABCDEF")
+default_filter:
+    pstring("*")
+dirname:
+    pstring("$")
+
+entry:
+    {
+    size:
+        .word 0
+    filename:
+        pstring("0123456789ABCDEF")
+    type:
+        pstring("*DIR<")
+    }
+}
+
+// other
 
 nb_variables:       // nb de variables définies       
     .byte 0             

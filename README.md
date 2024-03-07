@@ -131,6 +131,10 @@ related BIOS operations :
     On exit : C = 1 if split occurs, 
               A = number of items after split
 
+**str_pat** : pattern filter apply r1 on r0
+
+    On exit : C = 1 if filter matches
+
 ### system variables
 
 A pool of <name> / <pstring value> variables is maintained.
