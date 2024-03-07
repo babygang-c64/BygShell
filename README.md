@@ -420,7 +420,10 @@ Y = bit to set in A
 # Internal commands
 
 **QUIT**
-
+```
+Warm reset to BASIC startup.
+Restart shell with reset, sys 64738 or run / stop + restore
+```
 **SET**
 
 **ECHO**
@@ -430,9 +433,16 @@ Y = bit to set in A
 **LS**
 
 **ST**
-
+```
+Print status of current disk device
+```
 **SD**
-
+```
+SD <device>
+Change current disk device (if device is available in scanned devices)
+To rescan devices use LSBLK
+"DEVICE" variable is set to current device
+```
 **HELP**
 
 **LSD**
