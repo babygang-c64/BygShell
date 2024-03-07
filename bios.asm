@@ -4048,23 +4048,31 @@ do_directory_close:
 
 directory:
 {
+
+dirname:
+    pstring("$")
+
     // indicateur entrée = diskname
 diskname:
     .byte 0
-    // types d'entrée
+
+    // Types de fichier
+
+    .label TYPE_PRG=1
+    .label TYPE_SEQ=2
+    .label TYPE_USR=4
+    .label TYPE_REL=8
+    .label TYPE_DIR=16
+    .label TYPE_ERR=128
+    .label TYPE_FILES=1+2+4
+
 types:
     .text "PSURD*"
     .byte 0
 types_code:
     .byte 1,2,4,8,16,128
 
-.label TYPE_PRG=1
-.label TYPE_SEQ=2
-.label TYPE_USR=4
-.label TYPE_REL=8
-.label TYPE_DIR=16
-.label TYPE_ERR=128
-.label TYPE_FILES=1+2+4
+    // Valeurs pour filtre
 
 filter_types:
     .byte 255
@@ -4072,17 +4080,22 @@ filter:
     pstring("0123456789ABCDEF")
 default_filter:
     pstring("*")
-dirname:
-    pstring("$")
 
 entry:
     {
+    // Filesize in blocks
     size:
         .word 0
+    
+    // Filename
     filename:
         pstring("0123456789ABCDEF")
+    
+    // Filetype string
     type:
         pstring("*DIR<")
+    
+    // Filetype binary value
     filetype:
         .byte 0
     }

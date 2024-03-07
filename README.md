@@ -241,3 +241,83 @@ C=1 if A is a digit
 **set_bit**
 
 Y = bit to set in A
+
+### List of BIOS entry points
+
+## System
+
+reset
+file_load
+error
+
+## Screen & Keyboard I/O
+
+pprint
+pprintnl
+input
+pprinthex
+pprinthex8
+print_path
+
+# Conversions
+
+hex2int
+
+## Variables
+
+var_set
+var_get
+var_del
+var_count
+
+# Lists
+
+list_add
+list_get
+list_del
+list_print
+list_size
+list_reset
+
+# Disk I/O
+
+set_device
+prep_path
+build_path
+lsblk
+get_device_status
+set_device_from_path
+
+# pStrings
+
+str_cat
+str_cpy
+str_empty
+str_expand
+str_pat
+str_cmp
+str_chr
+str_rchr
+str_lstrip
+str_len
+str_del
+str_ins
+str_ncpy
+str_split
+
+# File
+
+file_open
+file_close
+file_readline
+
+buffer_read
+buffer_write
+
+# Directory
+
+directory_open
+directory_set_filter
+directory_get_entry
+directory_close
+is_filter
