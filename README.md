@@ -246,78 +246,78 @@ Y = bit to set in A
 
 ## System
 
-reset
-file_load
-error
+# reset
+# file_load
+# error
 
 ## Screen & Keyboard I/O
 
-pprint
-pprintnl
-input
-pprinthex
-pprinthex8
-print_path
+# pprint
+# pprintnl
+#  input
+# pprinthex
+# pprinthex8
+# print_path
 
-# Conversions
+## Conversions
 
-hex2int
+# hex2int
 
 ## Variables
 
-var_set
-var_get
-var_del
-var_count
+# var_set
+# var_get
+# var_del
+# var_count
 
-# Lists
+## Lists
 
-list_add
-list_get
-list_del
-list_print
-list_size
-list_reset
+# list_add
+# list_get
+# list_del
+# list_print
+# list_size
+# list_reset
 
-# Disk I/O
+## Disk I/O
 
-set_device
-prep_path
-build_path
-lsblk
-get_device_status
-set_device_from_path
+# set_device
+# prep_path
+# build_path
+# lsblk
+# get_device_status
+# set_device_from_path
 
-# pStrings
+## pStrings
 
-    str_cat
-    str_cpy
-    str_empty
-    str_expand
-    str_pat
-    str_cmp
-    str_chr
-    str_rchr
-    str_lstrip
-    str_len
-    str_del
-    str_ins
-    str_ncpy
-    str_split
+# str_cat
+# str_cpy
+# str_empty
+# str_expand
+# str_pat
+# str_cmp
+# str_chr
+# str_rchr
+# str_lstrip
+# str_len
+# str_del
+# str_ins
+# str_ncpy
+# str_split
 
-# File
+## File
 
-file_open
-file_close
-file_readline
+# file_open
+# file_close
+# file_readline
 
-buffer_read
-buffer_write
+# buffer_read
+# buffer_write
 
-# Directory
+## Directory
 
-directory_open
-directory_set_filter
-directory_get_entry
-directory_close
-is_filter
+# directory_open
+# directory_set_filter
+# directory_get_entry
+# directory_close
+# is_filter
