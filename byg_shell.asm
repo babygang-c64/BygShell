@@ -2164,16 +2164,18 @@ help_message:
 //---------------------------------------------------------------
 
 cmd_quit:
-    pla
-    pla
-    lda #MEMSTD
-    sta $01
-    rts
+    ldx #$ff
+    sei
+    txs
+    cld
+    jmp $fcef
 
 presence_separateur:
     .byte 0
 varprompt:
     pstring("PROMPT")
+txt_bye:
+    pstring("%C1BYEm")
 
 //----------------------------------------------------
 // cmd_mem : affiche un contenu mémoire
