@@ -149,7 +149,90 @@ related BIOS operations :
 
 **var_del** : deletes variable #A
 
-### Helper BIOS functions :
+### Directory routines
+
+**directory_open** : Open the directory
+
+Works on current device, resets the directory filters
+On exit : C=1 if error
+
+**directory_set_filter** : Filters directory entries
+
+R0 = pstring of filename filter
+X = bitmap of filetypes filter
+
+File types are in bios.directory namespace :
+
+bios.directory.TYPE_PRG     PRG program files
+bios.directory.TYPE_SEQ     SEQ files
+bios.directory.TYPE_USR     USR files
+bios.directory.TYPE_REL     REL files
+bios.directory.TYPE_DIR     DIR directory
+bios.directory.TYPE_ERR     ERR file in error status
+bios.directory.TYPE_FILES   PRG / USR / SEQ files
+
+Example :
+```
+    swi directory_open
+    ldx #bios.directory.TYPE_PRG
+    swi directory_set_filter, filtre_dir
+    ...
+filtre_dir:
+    pstring("*.TXT")
+```
+
+**directory_get_entry** : Retrieves next directory entry
+
+Populates the bios.directory.entry data structure
+
+On exit :
+    A   : entry type
+        $00 = disk name
+        $80 = filtered entry
+
+    C=1 : end of directory
+
+Example :
+
+```
+dir_next:
+    swi directory_get_entry
+    bcs dir_end
+    beq dir_end
+    bmi dir_next
+
+    swi pprintnl, bios.directory.entry.filename
+    jmp dir_next
+
+dir_end:
+    swi directory_close
+```
+**directory_close** : Close the directory
+
+**directory.entry data structure**
+
+Available at bios.directory.entry
+```
+entry:
+    {
+    // Filesize in blocks
+    size:
+        .word 0
+
+    // Filename
+    filename:
+        pstring("0123456789ABCDEF")
+
+    // Filetype string
+    type:
+        pstring("*DIR<")
+
+    // Filetype binary value
+    filetype:
+        .byte 0
+    }
+```
+### Helper BIOS functions
 
 **is_digit**
 
