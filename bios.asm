@@ -3539,12 +3539,10 @@ fin_lecture:
     beq pas_erreur
     // erreur lecture à gérer
 pas_erreur:
+    jsr CLRCHN
     lda nb_lu
     ldy #0
     sta (zr0),y
-    jsr CLRCHN
-//    lda #13
-//    jsr CHROUT
     sec
     rts
 

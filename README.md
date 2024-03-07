@@ -77,21 +77,150 @@ related macro :
 **pstring("STRING VALUE")**
 
 Initializes a pstring value with length preset according to the "STRING VALUE" length
+    
+### Lists
 
-related BIOS operations : 
+A list data structure contains multiple pStrings
 
-**str_empty** : input R0 = pstring
+### system variables
+
+A pool of <name> / <pstring value> variables is maintained.
+Some variables are pre-allocated
+
+**var_set** : 
+    Variable with name in R0 = pstring R1
+
+**var_get** : 
+    R1 = value of variable with name in R0 
+    On exit : C=1 variable found, C=0 variable not found
+
+**var_del** : 
+    Delete variable #A
+
+### Directory routines
+
+### Helper BIOS functions
+
+**is_digit**
+
+C=1 if A is a digit
+
+**set_bit**
+
+Y = bit to set in A
+
+### List of BIOS entry points
+
+## System
+
+**reset**
+    Restart the shell, cold start
+
+**file_load**
+    Load a binary file for running, checks the presence of a BASIC stubs with a SYS instruction and starts code at $080D (2061)
+
+**error**
+    Print the error message in R0
+
+## Screen & Keyboard I/O
+
+**pprint**
+    Print a pString, after expansion of contents
+
+**pprintnl**
+    Same as pprint, with a new line added
+
+(**print_int** to add to BIOS)
+
+**input**
+
+**pprinthex**
+
+**pprinthex8**
+
+**print_path**
+
+## Conversions
+
+**hex2int**
+
+(**int2str** to add to BIOS)
+
+(**str2int** to add to BIOS)
+
+## Variables
+
+**var_set** : 
+    Variable with name in R0 = pstring R1
+
+**var_get** : 
+    R1 = value of variable with name in R0 
+    On exit : C=1 variable found, C=0 variable not found
+
+**var_del** : 
+    Delete variable #A
+
+**var_count**
+    Count number of available variables or internal commands.
+    R0 = source variables space
+    On exit : A = number of variables
+
+    shell.var_names = variables space
+    shell.internal_commands = internal commands space
+
+## Lists
+
+**list_add**
+
+**list_get**
+
+**list_del**
+
+**list_print**
+
+**list_size**
+
+**list_reset**
+
+## Disk I/O
+
+**set_device**
+
+**prep_path**
+
+**build_path**
+    Build a path pString from a ppath
+    R1 = ppath source
+    R0 = address of target pString
+    C=0 adds : to filename, C=1 : no separator added
+    On exit: r0 contains path:name
+
+**lsblk**
+
+**get_device_status**
+    Get current device status
+    C=1 prints result on screen, C=0 silent mode
+    On exit : status code into R0, 2 positions
+    C=0 if code 00, C=1 otherwise
+
+**set_device_from_path**
+
+## pStrings
+
+**str_cat**
+    pstring(r0) += pstring(r1)
+
+**str_cpy**
+    pstring(r1) = pstring(r0)
+    return A = total copied bytes (R0 pstring length + 1)
+
+**str_empty**
+    Input R0 = pstring
     C(arry)=0 if string is empty (zero length or spaces)
     C=1 if string is not empty
 
-**str_cat** : pstring(r0) += pstring(r1)
-
-**str_cpy** : pstring(r1) = pstring(r0)
-    return A = total copied bytes (R0 pstring length + 1)
-
-**str_ncpy** : pstring(r1) = left(pstring(r0), X)
-
-**str_expand** : pstring(r1) = expansed pstring(r0)
+**str_expand**
+    pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
 ```
         %% = %
@@ -99,57 +228,82 @@ related BIOS operations :
         %P<n> = pstring value at address of register R<n>
         %V<variable>% = pstring value stored for system variable with name <variable>
         %C<hexcolor> = insert character to change color to <hexcolor> (hex nibble)
+                       R = reverse, N = normal, H = clear screen / home
+        %H<hex> = insert character <hex>
 ```    
     On exit : C=1 if error, C=0 if OK
 
-**str_cmp** : compare pstring(r0) and pstring(r1)
+**str_pat**
+    Pattern filter apply r1 on r0
+    Patterns can be ? or *
+    On exit : C = 1 if filter matches
 
+**str_cmp**
+    Compare pstring(r0) and pstring(r1)
     On exit : C=1 if equals, C=0 otherwise
 
-**str_del** : remove Y characters of pstring r0, starting at X
-
-**str_ins** : insert pstring(r1) at position X of pstring(r0)
-
-    pstring(r0) string size should be big enough
-
-**str_chr** : find position of character X in pstring(r0)
-
+**str_chr**
+    Find position of character X in pstring(r0)
     On exit : C=1 if found, Y = position
 
-**str_rchr** : backwards str_chr
-
+**str_rchr**
+    Backwards str_chr
     On exit : C=1 if found, Y = position
 
-**str_lstrip** : suppress spaces on left side of pstring(r0)
+**str_lstrip**
+    Suppress spaces on left side of pstring(r0)
 
-**str_len** : return length of pstring(r0) into A
-
+**str_len**
+    Return length of pstring(r0) into A
     On exit : A = pstring length
 
-**str_split** : split pstring(r0) with separator X
+**str_del**
+    Remove Y characters of pstring r0, starting at X
 
+**str_ins**
+    Insert pstring(r1) at position X of pstring(r0)
+    pstring(r0) string size should be big enough
+
+**str_ncpy**
+    pstring(r1) = left(pstring(r0), X)
+
+**str_split**
+    Split pstring(r0) with separator X
     On exit : C = 1 if split occurs, 
               A = number of items after split
 
-**str_pat** : pattern filter apply r1 on r0
 
-    On exit : C = 1 if filter matches
+## File
 
-### system variables
+**file_open**
+    R0 = filename to open, X = channel to use.
+    C=0 open for reading, C=1 open for writing (applies a CHKIN / CHKOUT to channel)
+    Open disk file for reading / writing.
+    Secondary address will be X too, except for directory where it's forced to 0.
+    For writing the filename should contain the file type and write indicator.
+    On exit : C=1 if open failed
 
-A pool of <name> / <pstring value> variables is maintained.
+**file_close**
+    X = channel to close
 
-related BIOS operations :
+**file_readline**
 
-**var_set** : variable with name in R0 = pstring R1
+**buffer_read**
+    X = channel to read from, R0 = pString buffer, C=0 for normal reading or C=1 for line reading.
+    The pString buffer should be allocated, the function will read at most the length indicated in the pString.
+    Line reading stops when a $0A or $0D character is found.
+    On exit C=1 if end of file or error
+```
+    ldx #2
+    lda #8
+    sta buffer_hexdump
+    clc
+    swi buffer_read, buffer_hexdump
+```
 
-**var_get** : R1 = value of variable with name in R0 
+**buffer_write**
 
-    On exit : C=1 variable found, C=0 variable not found
-
-**var_del** : deletes variable #A
-
-### Directory routines
+## Directory
 
 **directory_open** : Open the directory
 
@@ -232,133 +386,66 @@ entry:
         .byte 0
     }
 ```
-### Helper BIOS functions
-
-**is_digit**
-
-C=1 if A is a digit
-
-**set_bit**
-
-Y = bit to set in A
-
-### List of BIOS entry points
-
-## System
-
-**reset**
-
-**file_load**
-
-**error**
-
-## Screen & Keyboard I/O
-
-**pprint**
-
-**pprintnl**
-
-**input**
-
-**pprinthex**
-
-**pprinthex8**
-
-**print_path**
-
-## Conversions
-
-**hex2int**
-
-## Variables
-
-**var_set**
-
-**var_get**
-
-**var_del**
-
-**var_count**
-
-
-## Lists
-
-**list_add**
-
-**list_get**
-
-**list_del**
-
-**list_print**
-
-**list_size**
-
-**list_reset**
-
-## Disk I/O
-
-**set_device**
-
-**prep_path**
-
-**build_path**
-
-**lsblk**
-
-**get_device_status**
-
-**set_device_from_path**
-
-## pStrings
-
-**str_cat**
-
-**str_cpy**
-
-**str_empty**
-
-**str_expand**
-
-**str_pat**
-
-**str_cmp**
-
-**str_chr**
-
-**str_rchr**
-
-**str_lstrip**
-
-**str_len**
-
-**str_del**
-
-**str_ins**
-
-**str_ncpy**
-
-**str_split**
-
-## File
-
-**file_open**
-
-**file_close**
-
-**file_readline**
-
-**buffer_read**
-
-**buffer_write**
-
-## Directory
-
-**directory_open**
-
-**directory_set_filter**
-
-**directory_get_entry**
-
-**directory_close**
 
 **is_filter**
+    Check if pString in R0 contains wildcards (* and ?)
+    C=1 if wildcards were found
+
+# Internal commands
+
+**QUIT**
+
+**SET**
+
+**ECHO**
+
+**ENV**
+
+**LS**
+
+**ST**
+
+**SD**
+
+**HELP**
+
+**LSD**
+
+**KEYTEST**
+
+**CD**
+
+**CMD**
+
+**CAT**
+
+**MKDIR**
+
+**RMDIR**
+
+**RM**
+
+**MEM**
+
+**CP**
+
+**CLEAR**
+
+**MORE**
+
+**SAVEENV**
+
+**INPUT**
+
+**FILTER**
+
+**HISTORY**
+
+# Internal commands aliases
+
+**$**
+    Alias for LS
+**@**
+    Alias for ST
+**LL**
+    Alias for LS -L
