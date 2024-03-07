@@ -290,20 +290,20 @@ set_device_from_path
 
 # pStrings
 
-str_cat
-str_cpy
-str_empty
-str_expand
-str_pat
-str_cmp
-str_chr
-str_rchr
-str_lstrip
-str_len
-str_del
-str_ins
-str_ncpy
-str_split
+    str_cat
+    str_cpy
+    str_empty
+    str_expand
+    str_pat
+    str_cmp
+    str_chr
+    str_rchr
+    str_lstrip
+    str_len
+    str_del
+    str_ins
+    str_ncpy
+    str_split
 
 # File
 
