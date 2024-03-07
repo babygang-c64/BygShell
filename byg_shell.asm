@@ -2205,11 +2205,8 @@ juste_8:
     swi list_get, parameters.list
     swi hex2int
     push r0
-    add r8, a
-    lda zr0l
-    sta stop_address
-    lda zr0h
-    sta stop_address+1
+    add r0, #8
+    mov stop_address, r0
     pop r0
 
 boucle_hex:
