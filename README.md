@@ -246,29 +246,29 @@ Y = bit to set in A
 
 ## System
 
-# reset
-# file_load
-# error
+**reset**
+**file_load**
+**error**
 
 ## Screen & Keyboard I/O
 
-# pprint
-# pprintnl
-#  input
-# pprinthex
-# pprinthex8
-# print_path
+**pprint**
+**pprintnl**
+**input**
+**pprinthex**
+**pprinthex8**
+**print_path**
 
 ## Conversions
 
-# hex2int
+**hex2int**
 
 ## Variables
 
-# var_set
-# var_get
-# var_del
-# var_count
+**var_set**
+**var_get**
+**var_del**
+**var_count**
 
 ## Lists
 
