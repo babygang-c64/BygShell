@@ -208,13 +208,16 @@ Y = bit to set in A
 ## pStrings
 
 **str_cat**
+```
     pstring(r0) += pstring(r1)
-
+```
 **str_cpy**
+```
     pstring(r1) = pstring(r0)
     return A = total copied bytes (R0 pstring length + 1)
-
+```
 **str_empty**
+```
     Input R0 = pstring
     C(arry)=0 if string is empty (zero length or spaces)
     C=1 if string is not empty
@@ -222,7 +225,7 @@ Y = bit to set in A
 **str_expand**
     pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
-```
+
         %% = %
         %R<n> = hex value of register R<n>
         %P<n> = pstring value at address of register R<n>
@@ -230,166 +233,189 @@ Y = bit to set in A
         %C<hexcolor> = insert character to change color to <hexcolor> (hex nibble)
                        R = reverse, N = normal, H = clear screen / home
         %H<hex> = insert character <hex>
-```    
-    On exit : C=1 if error, C=0 if OK
 
+    On exit : C=1 if error, C=0 if OK
+```
 **str_pat**
+```
     Pattern filter apply r1 on r0
     Patterns can be ? or *
     On exit : C = 1 if filter matches
-
+```
 **str_cmp**
+```
     Compare pstring(r0) and pstring(r1)
     On exit : C=1 if equals, C=0 otherwise
-
+```
 **str_chr**
+```
     Find position of character X in pstring(r0)
     On exit : C=1 if found, Y = position
-
+```
 **str_rchr**
+```
     Backwards str_chr
     On exit : C=1 if found, Y = position
-
+```
 **str_lstrip**
+```
     Suppress spaces on left side of pstring(r0)
-
+```
 **str_len**
+```
     Return length of pstring(r0) into A
     On exit : A = pstring length
-
+```
 **str_del**
+```
     Remove Y characters of pstring r0, starting at X
-
+```
 **str_ins**
+```
     Insert pstring(r1) at position X of pstring(r0)
     pstring(r0) string size should be big enough
-
+```
 **str_ncpy**
+```
     pstring(r1) = left(pstring(r0), X)
-
+```
 **str_split**
+```
     Split pstring(r0) with separator X
     On exit : C = 1 if split occurs, 
               A = number of items after split
-
+```
 
 ## File
 
 **file_open**
+```
     R0 = filename to open, X = channel to use.
     C=0 open for reading, C=1 open for writing (applies a CHKIN / CHKOUT to channel)
+    On exit : C=1 if open failed
+
     Open disk file for reading / writing.
     Secondary address will be X too, except for directory where it's forced to 0.
     For writing the filename should contain the file type and write indicator.
-    On exit : C=1 if open failed
-
+```
 **file_close**
+```
     X = channel to close
-
+```
 **file_readline**
-
+```
+```
 **buffer_read**
+```
     X = channel to read from, R0 = pString buffer, C=0 for normal reading or C=1 for line reading.
     The pString buffer should be allocated, the function will read at most the length indicated in the pString.
     Line reading stops when a $0A or $0D character is found.
     On exit C=1 if end of file or error
-```
-    ldx #2
-    lda #8
-    sta buffer_hexdump
-    clc
-    swi buffer_read, buffer_hexdump
-```
 
+        ldx #2
+        lda #8
+        sta buffer_hexdump
+        clc
+        swi buffer_read, buffer_hexdump
+```
 **buffer_write**
+```
+```
 
 ## Directory
 
-**directory_open** : Open the directory
-
-Works on current device, resets the directory filters
-On exit : C=1 if error
-
-**directory_set_filter** : Filters directory entries
-
-R0 = pstring of filename filter
-X = bitmap of filetypes filter
-
-File types are in bios.directory namespace :
-
-bios.directory.TYPE_PRG     PRG program files
-bios.directory.TYPE_SEQ     SEQ files
-bios.directory.TYPE_USR     USR files
-bios.directory.TYPE_REL     REL files
-bios.directory.TYPE_DIR     DIR directory
-bios.directory.TYPE_ERR     ERR file in error status
-bios.directory.TYPE_FILES   PRG / USR / SEQ files
-
-Example :
+**directory_open**
 ```
-    swi directory_open
-    ldx #bios.directory.TYPE_PRG
-    swi directory_set_filter, filtre_dir
-    ...
-filtre_dir:
-    pstring("*.TXT")
+    Open the directory
+
+    Works on current device, resets the directory filters
+    On exit : C=1 if error
 ```
-
-**directory_get_entry** : Retrieves next directory entry
-
-Populates the bios.directory.entry data structure
-
-On exit :
-    A   : entry type
-        $00 = disk name
-        $80 = filtered entry
-
-    C=1 : end of directory
-
-Example :
-
+**directory_set_filter**
 ```
-dir_next:
-    swi directory_get_entry
-    bcs dir_end
-    beq dir_end
-    bmi dir_next
+    Filters directory entries
 
-    swi pprintnl, bios.directory.entry.filename
-    jmp dir_next
+    R0 = pstring of filename filter
+    X = bitmap of filetypes filter
 
-dir_end:
-    swi directory_close
+    File types are in bios.directory namespace :
+
+    bios.directory.TYPE_PRG     PRG program files
+    bios.directory.TYPE_SEQ     SEQ files
+    bios.directory.TYPE_USR     USR files
+    bios.directory.TYPE_REL     REL files
+    bios.directory.TYPE_DIR     DIR directory
+    bios.directory.TYPE_ERR     ERR file in error status
+    bios.directory.TYPE_FILES   PRG / USR / SEQ files
+
+    Example :
+
+        swi directory_open
+        ldx #bios.directory.TYPE_PRG
+        swi directory_set_filter, filtre_dir
+        ...
+    filtre_dir:
+        pstring("*.TXT")
 ```
-**directory_close** : Close the directory
+**directory_get_entry**
+```
+    Retrieves next directory entry
 
+    Populates the bios.directory.entry data structure
+
+    On exit :
+        A   : entry type
+            $00 = disk name
+            $80 = filtered entry
+
+        C=1 : end of directory
+
+    Example :
+
+        dir_next:
+            swi directory_get_entry
+            bcs dir_end
+            beq dir_end
+            bmi dir_next
+
+            swi pprintnl, bios.directory.entry.filename
+            jmp dir_next
+
+        dir_end:
+            swi directory_close
+```
+**directory_close**
+```
+    Close the directory
+```
 **directory.entry data structure**
-
-Available at bios.directory.entry
 ```
-entry:
-    {
-    // Filesize in blocks
-    size:
-        .word 0
+    Available at bios.directory.entry
 
-    // Filename
-    filename:
-        pstring("0123456789ABCDEF")
+    entry:
+        {
+        // Filesize in blocks
+        size:
+            .word 0
 
-    // Filetype string
-    type:
-        pstring("*DIR<")
+        // Filename
+        filename:
+            pstring("0123456789ABCDEF")
 
-    // Filetype binary value
-    filetype:
-        .byte 0
-    }
+        // Filetype string
+        type:
+            pstring("*DIR<")
+
+        // Filetype binary value
+        filetype:
+            .byte 0
+        }
 ```
-
 **is_filter**
+```
     Check if pString in R0 contains wildcards (* and ?)
     C=1 if wildcards were found
+```
 
 # Internal commands
 
@@ -444,8 +470,14 @@ entry:
 # Internal commands aliases
 
 **$**
+```
     Alias for LS
+```
 **@**
+```
     Alias for ST
+```
 **LL**
+```
     Alias for LS -L
+```
