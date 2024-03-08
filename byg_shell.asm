@@ -619,25 +619,13 @@ do_pagination:
     lda #0
     sta cpt_ligne
     swi pprint, msg_suite
+    swi key_wait
     ldy #6
-wait_key:
-    lda KEYPRESS
-    cmp #$40
-    beq wait_key
-    cmp #$01
-    beq key_ok
-    cmp #$07
-    beq key_ok
-    cmp #$3c
-    beq key_ok
-    cmp #$3f
-    beq key_ok
-    bne wait_key
-key_ok:
     lda #20
+efface_msg:
     jsr CHROUT
     dey
-    bne key_ok
+    bne efface_msg
     // ici il faudrait vider le buffer clavier
 pas_opt_p:
     rts
@@ -725,6 +713,7 @@ cmd_cat:
     needs_parameters(1)
     mov r1, #options_cat
     jsr check_options
+
 options_ok:
     sta options
 
@@ -1677,6 +1666,7 @@ pas_script:
     rts
 
 is_binary:
+    clc
     jmp bios.do_file_load
 }
 
@@ -1998,6 +1988,41 @@ lgr_copie:
 }
 
 //---------------------------------------------------------------
+// cmd_koala : affiche une image koala painter en mémoire
+//---------------------------------------------------------------
+
+cmd_koala:
+{
+    needs_parameters(1)
+    mov r1, #options_koala
+    jsr check_options
+    sta options
+
+    mov r0, #do_koala
+    jmp boucle_params
+
+options:
+    .byte 0
+options_koala:
+    pstring("KW")
+}
+
+do_koala:
+{
+    mov r1, #$4000
+    sec
+    swi file_load
+    sec
+    ldx #1
+    swi picture_show
+    clc
+    ldx #0
+    swi picture_show 
+    clc
+    jmp cmd_clear
+}
+
+//---------------------------------------------------------------
 // cmd_history : affiche l'historique des commandes
 //---------------------------------------------------------------
 
@@ -2178,6 +2203,25 @@ txt_bye:
     pstring("%C1BYEm")
 
 //----------------------------------------------------
+// cmd_load : charge un fichier en mémoire à l'adresse
+// indiquée
+//----------------------------------------------------
+
+cmd_load:
+{
+    needs_parameters(2)
+    ldx #2
+    swi list_get, parameters.list
+    swi hex2int
+    mov r1, r0
+    dex
+    swi list_get, parameters.list
+    sec
+    swi file_load
+    rts
+}
+
+//----------------------------------------------------
 // cmd_mem : affiche un contenu mémoire
 // paramètres utilisés : 1er = adresse début (hex)
 // 2ème si présent = adresse fin, sinon affiche 8
@@ -2198,7 +2242,6 @@ cmd_mem:
     ldx #1
     swi list_get, parameters.list
     swi hex2int
-    lda stop_address
     jmp boucle_hex
 
 juste_8:
@@ -2392,6 +2435,10 @@ internal_commands:
     .word shell.cmd_input
     pstring("FILTER")
     .word shell.cmd_filter
+    pstring("KOALA")
+    .word shell.cmd_koala
+    pstring("LOAD")
+    .word shell.cmd_load
 
     //-- aliases
     pstring("$")

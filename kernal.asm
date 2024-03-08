@@ -34,6 +34,7 @@
 .label IECIN  = $ffa5
 .label UNTLK  = $FFAB
 .label CLEARSCREEN = $E544
+.label SCNKEY = $FF9F
 
 .label STATUS       = $90
 .label MEMIO        = $35

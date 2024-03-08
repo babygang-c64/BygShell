@@ -63,6 +63,8 @@
 .label directory_get_entry=47
 .label directory_close=48
 .label is_filter=49
+.label picture_show=50
+.label key_wait=51
 
 bios_jmp:
     .word do_reset
@@ -115,6 +117,8 @@ bios_jmp:
     .word do_directory_get_entry
     .word do_directory_close
     .word do_is_filter
+    .word do_picture_show
+    .word do_key_wait
 
 * = * "BIOS code"
 
@@ -650,31 +654,17 @@ lgr_ajout:
 
 //---------------------------------------------------------------
 // file_load : charge un fichier et execute code en $080d
-// r0 = nom fichier A = présence séparateur
+// r0 = nom fichier
+// si c=1 utilise R1 comme adresse de chargement et ne tente pas
+// de lancement, sinon utilise l'adresse présente dans le
+// fichier, vérifie la présence d'un SYS et lance en $080D
+// à revoir utilisation du path pour lancement commande
 //---------------------------------------------------------------
 
 do_file_load:
 {
-    sta avec_separateur
-    // sauvegarde nom
-    mov r2, r0
-    jsr test_load    
-    bcc load_ok
-
-    // test avec PATH + NOM
-
-    swi var_get, text_path
-    mov r0, r1
-    mov r1, #work_buffer
-    // 0 : dest = work buffer, 1 = path, 2 = filename
-
-    jsr bios.do_str_cpy
-
-    mov r0, #work_buffer
-    mov r1, r2
-    jsr bios.do_str_cat
-    
-    mov r0, #work_buffer
+    stc avec_adresse_dest
+    mov adresse_dest, r1
     jsr test_load
     bcc load_ok
 
@@ -683,7 +673,12 @@ erreur:
     rts
 
 load_ok:
+    lda avec_adresse_dest
+    beq run_binary
+    clc
+    rts
 
+run_binary:
     // vérifie présence SYS XXXX
     lda $0805
     cmp #$9e
@@ -701,14 +696,10 @@ load_ok:
     lda #>work_buffer
     sta zr0h
 
-    lda avec_separateur
     clc
-    jsr $080d
-    clc
-    rts
+    jmp $080d
 
 test_load:
-    
     ldy #0
     getbyte_r(0)
     ldx zr0l
@@ -718,22 +709,31 @@ test_load:
     jsr bios.do_set_device
     lda bios.device
 
-    lda #0  // 0 = fixed address, 1 = source address
-    ldy #2
+    // 2,X,0
+    lda #2
     ldx bios.device
+    ldy #0  // 0 = fixed address, 1 = source address
     jsr SETLFS
 
-    // load file to $0801
-    lda #0
+    // load file to $0801 or adresse_dest
+
     ldx #1
     ldy #8
-    jsr LOAD
-    rts
+    lda avec_adresse_dest
+    beq suite_load
+    ldx adresse_dest
+    ldy adresse_dest+1
+
+suite_load:
+    lda #0
+    jmp LOAD
 
 text_path:
     pstring("PATH")
-avec_separateur:
+avec_adresse_dest:
     .byte 0
+adresse_dest:
+    .word 0
 }
 
 .print "do_file_load=$"+toHexString(do_file_load)
@@ -3835,6 +3835,130 @@ padding_space:
 write_space:
     .byte 0
 do_padding:
+    .byte 0
+}
+
+//---------------------------------------------------------------
+// key_wait : wait for keypress
+//---------------------------------------------------------------
+
+do_key_wait:
+{
+wait_key:
+    jsr SCNKEY
+    jsr GETIN
+    cmp #$20
+    beq wait_key
+    cmp #$03
+    beq key_ok
+    cmp #$51
+    beq key_ok
+    cmp #$0d
+    beq key_ok
+    cmp #$11
+    beq key_ok
+    bne wait_key
+key_ok:
+    clc
+    rts
+}
+
+//===============================================================
+// picture routines :
+//
+// show  : show picture
+//===============================================================
+
+//---------------------------------------------------------------
+// picture_show : show picture
+//
+// R0 = picture data address if needed
+// C=1 : wait for keypress and returns to text mode
+// X = picture type
+//
+//  $00 : return to text mode
+//  $01 : Koala picture
+//---------------------------------------------------------------
+
+do_picture_show:
+{
+    stc has_keypress
+    bne pas_txt
+    jsr go_txt
+    lda #0
+    sta $d021
+    jmp fin_show
+
+
+pas_txt:
+    cpx #1
+    bne pas_koala
+
+    // screen to 6800, color to d800
+    // screen offset is 2800
+
+    ldx #0
+copy_color:
+    lda $6328,x
+    sta $d800,x
+    lda $6428,x
+    sta $d900,x
+    lda $6528,x
+    sta $da00,x
+    lda $6628,x
+    sta $db00,x
+    lda $5f40,x
+    sta $6800,x
+    lda $6040,x
+    sta $6900,x
+    lda $6140,x
+    sta $6a00,x
+    lda $6240,x
+    sta $6b00,x
+    dex
+    bne copy_color
+
+    // background color
+
+    lda $6710
+    sta $d021
+
+    jsr go_gfx
+    jmp fin_show
+
+pas_koala:
+
+fin_show:
+    lda has_keypress
+    beq no_keypress
+    swi key_wait
+no_keypress:
+    clc
+    rts
+
+go_gfx:
+    lda #$38
+    sta $d011
+    lda #$18
+    sta $d016
+    lda #$02
+    sta $dd00
+    lda #$A0
+    sta $d018
+    rts
+
+go_txt:
+    lda #$9b
+    sta $d011
+    lda #$c8
+    sta $d016
+    lda #$03
+    sta $dd00
+    lda #$17
+    sta $d018
+    rts
+
+has_keypress:
     .byte 0
 }
 
