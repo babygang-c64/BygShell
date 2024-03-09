@@ -669,6 +669,20 @@ pas_texte_invite:
 }
 
 //----------------------------------------------------
+// cmd_wait : wait vblanks
+//----------------------------------------------------
+
+cmd_wait:
+{
+    needs_parameters(1)
+    ldx #1
+    swi list_get, parameters.list
+    swi wait
+    clc
+    rts
+}
+
+//----------------------------------------------------
 // cmd_filter : test filtre
 //----------------------------------------------------
 
@@ -2069,7 +2083,12 @@ cmd_koala:
     sta options
 
     mov r0, #do_koala
-    jmp boucle_params
+    jsr boucle_params
+    clc
+    ldx #0
+    swi picture_show
+    clc
+    jmp cmd_clear
 
 options:
     .byte 0
@@ -2081,16 +2100,26 @@ do_koala:
 {
     mov r1, #$4000
     sec
-    //jsr cmd_file_load
     swi file_load
+    clc
+    lda cmd_koala.options
+    and #OPT_K
+    bne pas_K
     sec
+pas_K:
     ldx #1
     swi picture_show
+    lda cmd_koala.options
+    and #OPT_W
+    bne pas_W
+    mov r0, #$0050
+    swi wait
+pas_W:
     clc
-    ldx #0
-    swi picture_show 
-    clc
-    jmp cmd_clear
+    rts
+
+.label OPT_K=1
+.label OPT_W=1
 }
 
 //---------------------------------------------------------------
@@ -2510,6 +2539,8 @@ internal_commands:
     .word shell.cmd_koala
     pstring("LOAD")
     .word shell.cmd_load
+    pstring("WAIT")
+    .word shell.cmd_wait
 
     //-- aliases
     pstring("$")

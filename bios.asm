@@ -66,6 +66,7 @@
 .label picture_show=50
 .label key_wait=51
 .label directory_get_entries=52
+.label wait=53
 
 bios_jmp:
     .word do_reset
@@ -121,6 +122,7 @@ bios_jmp:
     .word do_picture_show
     .word do_key_wait
     .word do_directory_get_entries
+    .word do_wait
 
 * = * "BIOS code"
 
@@ -264,6 +266,34 @@ test_str:
     rts
 filtre_trouve:
     sec
+    rts
+}
+
+//---------------------------------------------------------------
+// wait : attente r0 vblanks, entrée = r0 hexa
+//---------------------------------------------------------------
+
+do_wait:
+{
+    swi hex2int
+boucle_w0:
+    dec zr0l
+    beq boucle_w1
+    lda #$f0
+wait_v:
+    cmp $d012
+    bne wait_v
+wait_v2:
+    cmp $d012
+    beq wait_v2
+    jmp boucle_w0
+boucle_w1:
+    lda zr0h
+    beq fin_wait
+    dec zr0h
+    bne boucle_w0
+fin_wait:
+    clc
     rts
 }
 
