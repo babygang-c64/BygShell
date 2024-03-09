@@ -46,4 +46,7 @@
 .label CURSOR_COLOR = 646
 .label KEYPRESS     = $cb   // $3c, $3f, $01, $07 = space, r/s, enter, cursor down
 
-
+// $FE00 : reset file info SETLFS
+// sta $b8 // file #
+// stx $ba // device #
+// sty $b9 // secondary

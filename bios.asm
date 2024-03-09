@@ -65,6 +65,7 @@
 .label is_filter=49
 .label picture_show=50
 .label key_wait=51
+.label directory_get_entries=52
 
 bios_jmp:
     .word do_reset
@@ -119,6 +120,7 @@ bios_jmp:
     .word do_is_filter
     .word do_picture_show
     .word do_key_wait
+    .word do_directory_get_entries
 
 * = * "BIOS code"
 
@@ -2786,6 +2788,7 @@ suite_while1:
     inc pos_wild
     inc pos_string
     jmp while1
+
 end_while1:
 
 while2:
@@ -2838,9 +2841,21 @@ not_ok_comp:
 
 ok_comp:
     inc pos_wild
-    inc pos_string    
+    inc pos_string
+    lda pos_wild
+    cmp lgr_wild
+    beq ok_wild
+    bcs ko_inc
+ok_wild:
+    lda pos_string
+    cmp lgr_string
+    beq ok_string
+    bcs ko_inc
+ok_string:
     jmp while2
-
+ko_inc:
+    sec
+    rts
 end_while2:
 
 while3:
@@ -3294,7 +3309,7 @@ info1581: // 1581, info at $a6e8
 }
 
 //----------------------------------------------------
-// file_close : fermeture fichier
+// file_close : fermeture fichier et reset I/O
 // entrée : X = canal
 //----------------------------------------------------
 
@@ -3509,7 +3524,6 @@ lecture:
     bne fin_lecture
     inc nb_lu
     jsr CHRIN
-    //jsr CHROUT
     ldy lecture_ligne
     beq pas_test
     cmp #13
@@ -3528,7 +3542,6 @@ fin_buffer:
     lda nb_lu
     ldy #0
     sta (zr0),y
-    jsr CLRCHN
     jsr READST
     bne fin_lecture
     clc
@@ -3538,8 +3551,9 @@ fin_lecture:
     and #$40
     beq pas_erreur
     // erreur lecture à gérer
+    //swi error, msg_error.read_error
+    // fin de fichier
 pas_erreur:
-    jsr CLRCHN
     lda nb_lu
     ldy #0
     sta (zr0),y
@@ -3968,9 +3982,10 @@ has_keypress:
 // open
 // set_filter
 // get_entry
+// get_entries
 // close
 // 
-// Uses channel #7
+// Uses channel #7 : 7,<device>,0
 //===============================================================
 
 //---------------------------------------------------------------
@@ -4027,11 +4042,11 @@ do_directory_set_filter:
 do_directory_get_entry:
 {
     jsr READST
-    beq lecture_ok
+    beq pas_EOF
     sec
     rts
 
-lecture_ok:
+pas_EOF:    
     // lecture 32 octets = 1 entrée de répertoire
     ldy #0
 lecture_buffer:
@@ -4124,6 +4139,7 @@ fin_types:
     lda directory.diskname
     beq diskname_passe
     dec directory.diskname
+
 diskname_passe:
     // filtre types
     lda directory.entry.filetype
@@ -4160,6 +4176,69 @@ do_directory_close:
     swi file_close
     clc
     rts
+}
+
+//---------------------------------------------------------------
+// directory_get_entries : lecture entrées vers liste
+// entrée X = filtre types, R0 = filtre nom
+// A = nb d'entrées
+//---------------------------------------------------------------
+
+do_directory_get_entries:
+{
+    txa
+    pha
+    push r0
+    swi directory_open
+    pop r0
+    pla
+    tax
+
+    swi directory_set_filter
+    mov r1, #directory.entries
+    // raz liste destination
+    ldy #0
+    sty nb_items
+    tya
+    mov (r1), a
+    push r1
+
+dir_suite:
+    swi directory_get_entry
+    bcs dir_fin
+    beq dir_fin
+    bmi dir_suite
+
+entree_ok:
+    // filtre OK, affiche le nom
+    swi pprintnl, bios.directory.entry.filename
+    mov r0, #bios.directory.entry.filename
+    pop r1
+    // ajoute chaine en r0
+    ldy #0
+    mov a, (r0++)
+    tax
+ajoute_entree:
+    mov a, (r0++)
+    mov (r1++), a
+    dex
+    bne ajoute_entree
+    push r1
+    inc nb_items
+    jmp dir_suite
+
+dir_fin:
+    pop r1
+    lda #0
+    mov (r1), a
+
+    swi directory_close
+    clc
+    lda nb_items
+    rts
+
+nb_items:
+    .byte 0
 }
 
 //===============================================================
@@ -4221,7 +4300,14 @@ entry:
     filetype:
         .byte 0
     }
+.label entries = work_entries;
+
 }
+.print "directory.entry=$"+toHexString(directory.entry)
+.print "directory.entry.filetype=$"+toHexString(directory.entry.filetype)
+.print "directory.entry.filename=$"+toHexString(directory.entry.filename)
+.print "directory.filter=$"+toHexString(directory.filter)
+.print "directory.filter_types=$"+toHexString(directory.filter_types)
 
 // other
 

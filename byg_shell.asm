@@ -140,7 +140,7 @@ cmd_echo:
     lda #1
     sta pos_param
 
-boucle_params:
+boucle_echo:
     ldx pos_param
     swi list_get, parameters.list
     swi pprint
@@ -149,7 +149,7 @@ boucle_params:
     beq sans_param
     lda #32
     jsr CHROUT
-    jmp boucle_params
+    jmp boucle_echo
 
 sans_param:
     lda #13
@@ -548,26 +548,12 @@ encore_cat:
     swi is_filter
     bcc no_filter
 
-    // filtre : recherche dans directory
-    swi directory_open
+    // filtre : entrées de répertoire
+    
     ldx #bios.directory.TYPE_FILES
-    swi directory_set_filter
+    swi directory_get_entries
+    breakpoint()
 
-dir_suite:
-    swi directory_get_entry
-    bcs dir_fin
-    beq dir_fin
-    bmi dir_suite
-
-    mov r0, #bios.directory.entry.filename
-    jsr do_jump
-    bcs fin_cat
-    ldx #7
-    jsr CHKIN
-    jmp dir_suite
-
-dir_fin:
-    swi directory_close
     jmp next_param
 
 no_filter:
@@ -589,6 +575,7 @@ do_jump:
     jsr jump:$fce2
     bcs erreur_exec
     clc
+
 erreur_exec:
     rts
 
@@ -791,8 +778,6 @@ boucle_cat:
     bcs derniere_ligne_hex
     jsr option_pagination
     jsr print_hex_buffer
-    ldx #2
-    jsr CHKIN
     jmp suite_cat
     
 pas_hexdump:
@@ -834,8 +819,13 @@ fin_cat:
 end:
     and #2
     bne error
+
     ldx #2
     swi file_close
+    // tmp, pas de récup device pour test
+    clc
+    rts
+
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     clc
@@ -845,7 +835,7 @@ end:
 
 error:
     ldx #2
-    jsr bios.do_file_close
+    swi file_close
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     swi error, msg_error.file_not_found
@@ -903,6 +893,70 @@ num_lignes:
     .word 0
 buffer_hexdump:
     pstring("01234567")
+}
+
+//----------------------------------------------------
+// file_load
+//----------------------------------------------------
+
+cmd_file_load:
+{
+
+    // passe le nom en r0 par un objet ppath
+    // mise à jour device + nom construit dans r0
+
+    mov r1, #work_path
+    swi prep_path
+    mov r1, #work_path
+    swi set_device_from_path, work_path
+    mov r1, #work_path
+    clc
+    swi build_path, work_buffer
+    mov r0, #work_buffer
+
+    // ouverture en lecture, nom dans r0
+    ldx #2
+    clc
+    swi file_open
+    jcs error
+
+    // passe le canal en lecture
+    ldx #2
+    jsr CHKIN
+
+    // test pour file not found
+    jsr READST
+    bne fin_load
+
+    mov r2, #$4000
+    ldy #0
+    jsr CHRIN
+    jsr CHRIN
+
+boucle_load:
+    jsr CHRIN
+    mov (r2++), a
+    jsr READST
+    bne fin_load
+    jmp boucle_load
+
+fin_load:
+    and #2
+    bne error
+    ldx #2
+    swi file_close
+    clc
+    rts
+
+    // erreur : file not found
+
+error:
+    ldx #2
+    jsr bios.do_file_close
+    ldx bios.save_device
+    jsr bios.do_set_device_from_int
+    swi error, msg_error.file_not_found
+    rts
 }
 
 //----------------------------------------------------
@@ -2009,16 +2063,21 @@ options_koala:
 
 do_koala:
 {
+    push r0
+    swi pprintnl
+    pop r0
     mov r1, #$4000
     sec
-    swi file_load
+    //jsr cmd_file_load
+    //swi file_load
     sec
     ldx #1
-    swi picture_show
+    //swi picture_show
     clc
     ldx #0
     swi picture_show 
     clc
+    rts
     jmp cmd_clear
 }
 
@@ -2505,7 +2564,8 @@ work_buffer:
     .fill $100,0
 work_buffer2:
     .fill $100,0
-
+work_entries:
+    .fill $100,0
 work_path:
     ppath(128)
 work_path2:

@@ -221,8 +221,9 @@ Y = bit to set in A
     Input R0 = pstring
     C(arry)=0 if string is empty (zero length or spaces)
     C=1 if string is not empty
-
+```
 **str_expand**
+```
     pstring(r1) = expansed pstring(r0)
     expanses pstring(r0) according to the following modifiers :
 
