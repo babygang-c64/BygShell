@@ -4210,14 +4210,15 @@ dir_suite:
     bmi dir_suite
 
 entree_ok:
-    // filtre OK, affiche le nom
-    swi pprintnl, bios.directory.entry.filename
+    // filtre OK, 
+    //swi pprintnl, bios.directory.entry.filename
     mov r0, #bios.directory.entry.filename
     pop r1
-    // ajoute chaine en r0
-    ldy #0
-    mov a, (r0++)
+
+    // ajoute chaine en r0, copie lgr+1
+    swi str_len
     tax
+    inx
 ajoute_entree:
     mov a, (r0++)
     mov (r1++), a

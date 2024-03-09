@@ -552,7 +552,19 @@ encore_cat:
     
     ldx #bios.directory.TYPE_FILES
     swi directory_get_entries
-    breakpoint()
+    sta nb_entries
+    mov r1, #bios.directory.entries
+
+boucle_entries:
+    push r1
+    mov r0, r1
+    jsr do_jump
+    pop r1
+    mov a, (r1)
+    add r1, a
+    inc r1
+    dec nb_entries
+    bne boucle_entries
 
     jmp next_param
 
@@ -579,6 +591,8 @@ do_jump:
 erreur_exec:
     rts
 
+nb_entries:
+    .byte 0
 pos_cat:
     .byte 0
 }
