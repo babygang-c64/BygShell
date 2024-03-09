@@ -559,10 +559,12 @@ boucle_entries:
     push r1
     mov r0, r1
     jsr do_jump
+    ldy #0
     pop r1
     mov a, (r1)
     add r1, a
     inc r1
+    //breakpoint()
     dec nb_entries
     bne boucle_entries
 
@@ -2077,21 +2079,17 @@ options_koala:
 
 do_koala:
 {
-    push r0
-    swi pprintnl
-    pop r0
     mov r1, #$4000
     sec
-    //jsr cmd_file_load
+    jsr cmd_file_load
     //swi file_load
     sec
     ldx #1
-    //swi picture_show
+    swi picture_show
     clc
     ldx #0
     swi picture_show 
     clc
-    rts
     jmp cmd_clear
 }
 
