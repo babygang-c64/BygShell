@@ -2081,8 +2081,8 @@ do_koala:
 {
     mov r1, #$4000
     sec
-    jsr cmd_file_load
-    //swi file_load
+    //jsr cmd_file_load
+    swi file_load
     sec
     ldx #1
     swi picture_show
