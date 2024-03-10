@@ -3507,7 +3507,7 @@ lgr_chaine:
 
 do_buffer_write:
 {
-    jsr CHKOUT
+    //jsr CHKOUT
     swi str_len
     sta nb_lu
     iny
@@ -3520,7 +3520,7 @@ ecriture:
     inc pos_lecture
     dec nb_lu
     bne ecriture
-    jsr CLRCHN
+    //jsr CLRCHN
     clc
     rts
 
@@ -3543,7 +3543,7 @@ pos_lecture:
 do_buffer_read:
 {
     stc lecture_ligne
-    // jsr CHKIN
+    //jsr CHKIN
 
     swi str_len
     sta lgr_max
@@ -3649,13 +3649,13 @@ not_directory:
     // si read = CHKIN, sinon CHKOUT
     lda read_write
     bne write
-    //ldx canal
-    //jsr CHKIN
+    ldx canal
+    jsr CHKIN
     clc
     rts
 write:
-    //ldx canal
-    //jsr CHKOUT
+    ldx canal
+    jsr CHKOUT
     clc
     rts
 

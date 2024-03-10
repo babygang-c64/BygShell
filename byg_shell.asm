@@ -426,15 +426,18 @@ cmd_cp:
 
     // copie fichier 1 vers 2
 
+
 copie_fichier:
     ldx #2
     jsr CHKIN
     clc
     lda #255
     sta work_buffer
+    ldx #2
     swi buffer_read, work_buffer
     stc copie_finie
     ldx #3
+    jsr CHKOUT
     swi buffer_write, work_buffer
     lda copie_finie
     beq copie_fichier
@@ -786,8 +789,8 @@ do_cat:
     jcs error
 
     // passe le canal en lecture
-    ldx #2
-    jsr CHKIN
+    //ldx #2
+    //jsr CHKIN
 
     // test pour file not found
     jsr READST
@@ -951,8 +954,8 @@ cmd_file_load:
     jcs error
 
     // passe le canal en lecture
-    ldx #2
-    jsr CHKIN
+    //ldx #2
+    //jsr CHKIN
 
     // test pour file not found
     jsr READST
@@ -1345,8 +1348,8 @@ pas_option_L:
     ldx #2
     clc
     swi file_open, dirname
-    ldx #2
-    jsr CHKIN
+    //ldx #2
+    //jsr CHKIN
 
     // lecture nom du disque / répertoire
 do_dir:
