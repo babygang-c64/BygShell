@@ -1772,8 +1772,8 @@ script_execute:
     jcs error
 
 next_line:
-    ldx #7
-    jsr CHKIN
+    //ldx #7
+    //jsr CHKIN
     sec
     lda #255
     sta input_buffer
