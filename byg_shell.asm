@@ -554,31 +554,27 @@ encore_cat:
     bcc no_filter
 
     // filtre : entrées de répertoire
-    
+    swi directory_open
     ldx #bios.directory.TYPE_FILES
-    swi directory_get_entries
-    sta nb_entries
-    mov r1, #bios.directory.entries
-
+    swi directory_set_filter
+    
 boucle_entries:
-    push r1
-    mov r0, r1
+    swi directory_get_entry
+    bcs fin_boucle_entries
+    beq fin_boucle_entries
+    bmi boucle_entries
+    jsr CLRCHN
+    swi pprintnl, bios.directory.entry.filename
+    mov r0, #bios.directory.entry.filename
     jsr do_jump
-    ldy #0
-    pop r1
-    mov a, (r1)
-    add r1, a
-    inc r1
-    //breakpoint()
-    dec nb_entries
-    bne boucle_entries
-
-    jmp next_param
+    jmp boucle_entries
 
 no_filter:
     jsr do_jump
     bcs fin_cat
 
+fin_boucle_entries:
+    swi directory_close
 next_param:
     inc pos_cat
     ldx pos_cat
@@ -1346,8 +1342,8 @@ open_ok:
     // lecture nom du disque / répertoire
 do_dir:
     swi directory_get_entry
-    jcs exit
     bmi do_dir
+    jcs exit
 
     lda format
     and #FT_DISKNAME

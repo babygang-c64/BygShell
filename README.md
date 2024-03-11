@@ -173,6 +173,10 @@ Y = bit to set in A
 **list_add**
 
 **list_get**
+    Returns the Xths value in the list
+    R0 = list object
+    X = element number to retrieve
+    On exit : C=1 and R0=value if OK, C=0 otherwhise
 
 **list_del**
 
