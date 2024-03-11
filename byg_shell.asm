@@ -323,7 +323,7 @@ type_env:
 
 suite_env:
     mov r3, r1
-    jsr bios.do_pprintnl
+    swi pprintnl
     clc
     jsr option_pagine
 
@@ -1039,7 +1039,7 @@ fin_load:
 
 error:
     ldx #2
-    jsr bios.do_file_close
+    swi file_close
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     swi error, msg_error.file_not_found
@@ -1117,7 +1117,7 @@ pas_de_device:
     swi get_device_status
 
     ldx #15
-    jsr bios.do_file_close
+    swi file_close
     clc
     rts
 
@@ -1299,7 +1299,6 @@ parent:
 oparent:
     .byte 1
     .byte 95
-
 }
 
 //----------------------------------------------------
@@ -1331,7 +1330,9 @@ cmd_clear:
 
 cmd_ll:
 {
-    lda #1
+    mov r1, #cmd_ls.options_ls
+    jsr check_options
+    ora #cmd_ls.OPT_LONG
     jmp cmd_ls.options_ok
 }
 
@@ -1345,20 +1346,8 @@ cmd_ls:
     .label OPT_DIR=2
     .label OPT_PAGE=4
     
-    // vérifie la présence d'options ou non
-
-    ldy #0
-    sty options
-    lda parameters.options
-    beq pas_options
-
-    mov r0, #parameters.options
     mov r1, #options_ls
-    
-    jsr do_get_options
-    bcc options_ok
-    sec
-    rts
+    jsr check_options
     
 options_ok:
     sta options
@@ -1399,6 +1388,14 @@ open_ok:
 
     // lecture nom du disque / répertoire
 do_dir:
+    lda options
+    and #OPT_DIR
+    beq pas_opt_dir
+
+    lda #bios.directory.TYPE_DIR
+    sta bios.directory.filter_types
+    
+pas_opt_dir:
     swi directory_get_entry
     jcs exit
 
@@ -1440,19 +1437,11 @@ pas_aff_blocs_free:
 
     // affichage nom fichier
 pas_blocs:
-
     lda format
     and #FT_SIZE
     beq pas_ft_size
 
     jsr set_dir_color
-
-    lda options
-    and #OPT_DIR
-    beq pas_filtre_dir
-    lda bios.directory.entry.type+1
-    cmp #'D'
-    bne do_next
 
 pas_filtre_dir:
     swi pprint, bios.directory.entry.type
