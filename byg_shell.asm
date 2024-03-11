@@ -901,13 +901,10 @@ opt_b_numero_ok:
     inc num_lignes
     bne pas_inc
     inc num_lignes+1
+
 pas_inc:
-    lda num_lignes
-    sta zr0l
-    lda num_lignes+1
-    sta zr0h
-    lda #%10011111
-    jsr bios.do_print_int
+    ldx #%10011111
+    swi pprint_int, num_lignes
     lda #32
     jsr CHROUT
 pas_numero:
@@ -1298,7 +1295,7 @@ cmd_ls:
     ldy #0
     sty options
     lda parameters.options
-    beq pas_de_parametres
+    beq pas_options
 
     mov r0, #parameters.options
     mov r1, #options_ls
@@ -1307,32 +1304,13 @@ cmd_ls:
     bcc options_ok
     sec
     rts
-filtre:
-    pstring("0123456789ABCDEF")
-.print "filtre=$"+toHexString(filtre)
-
+    
 options_ok:
     sta options
     sec
     jsr option_pagine
 
-pas_de_parametres:
-
-    lda #1
-    sta filtre
-    lda #'*'
-    sta filtre+1
-    lda parameters.list
-    cmp #2
-    bne pas_filtre
-
-    // si filtre en paramètre, copie le 
-    ldx #1
-    swi list_get, parameters.list
-    mov r1, #filtre
-    swi str_cpy
-
-pas_filtre:
+pas_options:
     lda #0
     sta format
     lda options
@@ -1347,24 +1325,37 @@ pas_option_L:
     sta colonnes
     sta tosize40
 
-    // ouverture $
-    ldx #4
-    clc
-    swi file_open, dirname
-    ldx #4
-    jsr CHKIN
+    // ouverture répertoire
+    swi directory_open
+    bcc open_ok
+    sec
+    rts
+
+open_ok:
+
+    lda parameters.list
+    cmp #2
+    bne do_dir
+
+    // si filtre en paramètre, copie le 
+    ldx #1
+    swi list_get, parameters.list
+    ldx #255
+    swi directory_set_filter
 
     // lecture nom du disque / répertoire
 do_dir:
-    jsr do_read_dir_entry
+    swi directory_get_entry
+    jcs exit
+    bmi do_dir
 
     lda format
     and #FT_DISKNAME
     beq not_ft_diskname
-    swi pprint, dir_entry.filename
+    swi pprint, bios.directory.entry.filename
     lda #32
     jsr CHROUT
-    swi pprintnl, dir_entry.type
+    swi pprintnl, bios.directory.entry.type
 
 not_ft_diskname:
 next:
@@ -1375,8 +1366,7 @@ next:
     jsr option_pagine
 
 pas_opt_page:
-
-    jsr do_read_dir_entry
+    swi directory_get_entry
     jcs exit
     bne pas_blocs
 
@@ -1386,16 +1376,13 @@ blocs:
     and #FT_FREE
     beq pas_aff_blocs_free
 
-    lda dir_entry.size
-    sta zr0l
-    lda dir_entry.size+1
-    sta zr0h
-    lda #%11111111
-    jsr bios.do_print_int
+    ldx #%11111111
+    mov r0, bios.directory.entry.size
+    swi pprint_int
     swi pprintnl, blocksfree
 
 pas_aff_blocs_free:
-    jmp next
+    jmp exit
 
     // affichage nom fichier
 pas_blocs:
@@ -1405,46 +1392,33 @@ pas_blocs:
     beq pas_ft_size
 
     jsr set_dir_color
-    
-    swi str_pat, dir_entry.filename, filtre
-    bcc filtre_ko
 
     lda options
     and #OPT_DIR
     beq pas_filtre_dir
-    lda 1+dir_entry.type
+    lda bios.directory.entry.type+1
     cmp #'D'
-    bne filtre_ko
+    bne do_next
 
 pas_filtre_dir:
-    swi pprint, dir_entry.type
-suite_filtre_dir:
-
-    // taille fichier
-    lda dir_entry.size
-    sta zr0l
-    lda dir_entry.size+1
-    sta zr0h
-    lda #%11111111
-    jsr bios.do_print_int
+    swi pprint, bios.directory.entry.type
+    ldx #%11111111
+    mov r0, bios.directory.entry.size
+    swi pprint_int
     lda #32
     jsr CHROUT
-pas_ft_size:
 
+pas_ft_size:
     lda format
     and #FT_SIZE
     beq pas_ft_size_name
 
-    swi pprintnl, dir_entry.filename
+    swi pprintnl, bios.directory.entry.filename
     lda #5
     sta 646
-filtre_ko:
     jmp do_next
 
 pas_ft_size_name:
-    swi str_pat, dir_entry.filename, filtre
-    bcc filtre_ko
-
     jmp print_name_no_size
 
 size40:
@@ -1460,6 +1434,7 @@ do_next:
     jsr STOP
     beq error      // no RUN/STOP -> continue
     jmp next
+
 error:
     // A contains error code
     // most likely error:
@@ -1469,26 +1444,20 @@ exit:
     bne pas_impair
     lda #13
     jsr CHROUT
-pas_impair:
 
-    ldx #4
-    swi file_close
+pas_impair:
+    swi directory_close
     rts
 
     // print_name_no_size : affichage nom sans taille
 print_name_no_size:
-    lda dir_entry.filename
+    lda bios.directory.entry.filename
     sta tosize40
 
-    //stw_r(1, dir_entry.filename)
-    //swi bios.filter, filtre
-    //bcs no_print2
     jsr set_dir_color
-    swi pprint, dir_entry.filename
+    swi pprint, bios.directory.entry.filename
     lda #5
     sta 646
-//no_print2:
-
     lda colonnes
     beq size40
 
@@ -1499,7 +1468,7 @@ print_name_no_size:
 
 set_dir_color:
     // type fichier
-    lda (dir_entry.type)+1
+    lda bios.directory.entry.type+1
     cmp #'D'
     bne pas_dir
     lda #13
@@ -1512,8 +1481,6 @@ pas_dir:
 pas_ouvert:
     rts
 
-dirname:
-    pstring("$")     // filename used to access directory
 blocksfree:
     pstring(" BLOCKS FREE")
 format:
@@ -1528,118 +1495,6 @@ options:
 options_ls:
     pstring("LDP")
 }
-
-//----------------------------------------------------
-// dir_entry : stockage d'une entrée de répertoire
-//----------------------------------------------------
-
-dir_entry:
-{
-size:
-    .word 0
-filename:
-    pstring("0123456789ABCDEF")
-type:
-    pstring("*DIR<")
-}
-
-//----------------------------------------------------
-// read_dir_entry : lecture entrée répertoire
-//----------------------------------------------------
-
-do_read_dir_entry:
-{
-    jsr READST
-    beq lecture_ok
-    sec
-    rts
-lecture_ok:
-    // lecture 32 octets = 1 entrée de répertoire
-    ldy #0
-lecture_buffer:
-    jsr CHRIN
-    sta buffer_entry,y
-    iny
-    cpy #32
-    bne lecture_buffer
-
-    // update size
-    lda buffer_entry+2
-    sta dir_entry.size
-    lda buffer_entry+3
-    sta dir_entry.size+1
-
-    // update nom et type par automate sur status
-    // des guillemets :
-    // 0 = pas encore rencontré = rien
-    // 1 = ouvert = copie nom
-    // 2 = fermé = copie type
-
-    ldx #0
-    stx status_guillemets
-    ldy #4
-
-update_nom:
-    lda buffer_entry,y
-    cmp #34
-    beq traite_guillemets
-
-    // si guill = 0 : continue
-    lda status_guillemets
-    beq suite_update
-
-    // si guill = 1 : copie dans nom
-    cmp #1
-    bne apres_nom
-    lda buffer_entry,y
-    sta dir_entry.filename+1,x
-    inx
-    bne suite_update
-
-    // si guill = 2 : copie dans type
-    // sauf si espace ou 0
-apres_nom:
-    lda buffer_entry,y
-    beq suite_update
-    cmp #32
-    beq suite_update
-    sta dir_entry.type+1,x
-    inx
-    bne suite_update
-
-    // guillemets : incrémente
-traite_guillemets:
-    inc status_guillemets
-    lda status_guillemets
-    cmp #2
-    bne suite_update
-
-    // si 2 = fin nom, màj longueur
-    // et redémarre à 0 pour type
-    stx dir_entry.filename
-    ldx #0
-
-    // suite update_nom
-suite_update:
-    iny
-    cpy #32
-    bne update_nom
-    stx dir_entry.type
-
-    lda status_guillemets
-    clc
-    rts
-
-status_guillemets:
-    .byte 0
-buffer_entry:
-    .fill 32,0
-msg_taille:
-    pstring("%R1 ")
-}
-
-.print "buffer_entry=$"+toHexString(do_read_dir_entry.buffer_entry)
-.print "dir_entry=$"+toHexString(dir_entry)
 
 //----------------------------------------------------
 // toplevel

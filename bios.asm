@@ -67,6 +67,7 @@
 .label key_wait=51
 .label directory_get_entries=52
 .label wait=53
+.label pprint_int=54
 
 bios_jmp:
     .word do_reset
@@ -123,6 +124,7 @@ bios_jmp:
     .word do_key_wait
     .word do_directory_get_entries
     .word do_wait
+    .word do_print_int
     
 * = * "BIOS code"
 
@@ -3317,8 +3319,8 @@ aff_numero_drive:
     sta zr0l
     lda #0
     sta zr0h
-    lda #%00000011
-    jmp do_print_int
+    ldx #%00000011
+    swi pprint_int
 
 first_device:
     .byte 0
@@ -3782,14 +3784,15 @@ silencieux:
 //---------------------------------------------------------------
 // print_int : affichage entier
 // entier dans r0
-// A = format, %PL123456
+// X = format, %PL123456
 // bit 7 = padding avec espace (avec 0 sinon)
 // bit 6 = suppression espaces en tête
 //---------------------------------------------------------------
 
 do_print_int:
 {
-    sta format
+    stx format
+    txa
     and #%10000000
     sta padding_space
     lda format
@@ -4013,8 +4016,6 @@ do_directory_open:
     rts
 
 open_ok:
-    ldx #7
-    jsr CHKIN
     lda #2
     sta directory.diskname
     lda #255
@@ -4047,6 +4048,9 @@ do_directory_set_filter:
 
 do_directory_get_entry:
 {
+    ldx #7
+    jsr CHKIN
+
     jsr READST
     beq pas_EOF
     sec
@@ -4061,7 +4065,7 @@ lecture_buffer:
     iny
     cpy #32
     bne lecture_buffer
-
+    jsr CLRCHN
     // update size
     mov directory.entry.size, buffer_entry+2
 

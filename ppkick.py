@@ -78,6 +78,9 @@ for line in hin:
         ptype1, pval1 = param_type(elems[3])
         if ptype0 != 'a' and ptype1 != 'a':
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
+            print(ptype0, pval0)
+            print(ptype1, pval1)
+            print('**%s' % newline)
         elif ptype0 == 'a' and ptype1 in ['s', 'si']:
             # mov a,(r0) / mov a,(r0++)
             newline = 'getbyte'

@@ -198,7 +198,7 @@ filename:
 {
     lda word_param
     sta zr0l+2*reg
-    lda word_param
+    lda word_param+1
     sta zr0h+2*reg
 }
 
