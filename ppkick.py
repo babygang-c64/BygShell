@@ -127,6 +127,12 @@ for line in hin:
         elif ptype0 == 'w' and ptype1 == 'a':
             newline = 'add8(' + pval0 + ')'
             hout.write(newline + '\n')
+        elif ptype0 == 'w' and ptype1 == 'i':
+            if get_size(pval1) == 8:            
+                newline = 'addi_w(' + pval0 +', ' + pval1 + ')'
+            else:
+                newline = 'addw_w(' + pval0 +', ' + pval1 + ')'
+            hout.write(newline + '\n')
         else:
             print(ptype0, pval0)
             print(ptype1, pval1)

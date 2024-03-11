@@ -177,6 +177,10 @@ do_reset:
     swi var_count, internal_commands
     sta nb_cmd
 
+    // script reset
+    lda #0
+    sta script_data
+
     // print banner
     swi pprintnl, text_banner
 
@@ -4077,9 +4081,37 @@ has_keypress:
 //===============================================================
 
 //---------------------------------------------------------------
+// script_execute : execute script
+//
+// R0 = script start
+//---------------------------------------------------------------
+
+do_script_execute:
+{
+next_command:
+    swi str_len
+    beq end_execute
+    sta lgr_commande
+    mov r1, #input_buffer
+    swi str_cpy
+    push r0
+    jsr shell.command_process
+    pop r0
+    lda lgr_commande
+    add r0, a
+    jmp next_command
+end_execute:
+    clc
+    rts
+lgr_commande:
+    .byte 0
+}
+
+//---------------------------------------------------------------
 // script_read : read script into memory
 //
 // R0 = script file name
+// R1 = write destination (usually script_data)
 //---------------------------------------------------------------
 
 do_script_read:

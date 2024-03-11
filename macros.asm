@@ -262,6 +262,41 @@ pas_inc:
 }
 
 //---------------------------------------------------------------
+// addi_w(addr) : (addr) += 8 bits immediate value
+// Y preserved
+// add addr, #<value>
+//---------------------------------------------------------------
+
+.macro addi_w(addr, value)
+{
+    clc
+    lda #value
+    adc addr
+    sta addr
+    bcc pas_inc
+    inc addr+1
+pas_inc:
+}
+
+//---------------------------------------------------------------
+// addw_w(addr) : (addr) += 16 bits immediate value
+// Y preserved
+// add addr, #<value>
+//---------------------------------------------------------------
+
+.macro addw_w(addr, value)
+{
+    clc
+    lda addr
+    adc #<value
+    sta addr
+    lda addr+1
+    adc #>value
+    sta addr+1
+pas_inc:
+}
+
+//---------------------------------------------------------------
 // addi_r(reg) : reg += 8 bits immediate value
 // Y preserved
 // add reg, #<value>

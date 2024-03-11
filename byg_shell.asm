@@ -18,13 +18,11 @@
 // espace pour les scripts
 //---------------------------------------------------------------
 
-    .align $100
-script_data:
-    .byte 0
+.label script_data = $6800
 
-    .align $100
 script_labels:
-    .byte 0
+    pstring("START")
+    .word script_data
 
 //---------------------------------------------------------------
 // espace de nom et valeurs pour les variables
@@ -120,7 +118,6 @@ coldstart:
     sei
     stx $d016
     jsr $fda3   // prepare IRQ
-    //jsr $fd50   // init memory
     jsr $fd15   // init IO
     jsr $ff5b   // init video
     cli
@@ -261,7 +258,8 @@ cmd_keytest:
 {
     jsr GETIN
     beq cmd_keytest
-    jsr bios.do_pprinthex8a
+    sta zr0l
+    swi pprinthex8
     lda #13
     jsr CHROUT
     clc
@@ -668,29 +666,70 @@ msg_suite:
 // cmd_input : saisie utilisateur, stockage dans
 // la variable indiquée en paramètre
 // input [invite] <variable>
+// options :
+//  K = single key press
+// 
 //----------------------------------------------------
 
 cmd_input:
 {
+    .label OPT_K=1
+
+    mov r1, #options_input
+    jsr check_options
+    sta options
+    lda options
+    and #OPT_K
+    bne wait_key
+
     needs_parameters(1)
-    ldx #1
-    swi list_get, parameters.list
-    mov r1, r0
+
     lda parameters.list
     cmp #3
     bne pas_texte_invite
 
-    swi pprint
+    jsr invite
+
     ldx #2
     swi list_get, parameters.list
     mov r1, r0
-
-pas_texte_invite:
+    
+input_var:
     swi input
     swap r0, r1
     swi var_set
     clc
     rts
+
+pas_texte_invite:
+    ldx #1
+    swi list_get, parameters.list
+    mov r1, r0
+    jmp input_var
+
+wait_key:
+    lda parameters.list
+    cmp #2
+    bne do_wait
+    jsr invite
+
+do_wait:
+    jsr GETIN
+    beq do_wait
+    clc
+    rts
+
+invite:
+    ldx #1
+    swi list_get, parameters.list
+    mov r1, r0
+    swi pprint
+    rts
+
+options_input:
+    pstring("K")
+options:
+    .byte 0
 }
 
 //----------------------------------------------------
