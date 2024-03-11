@@ -1328,7 +1328,6 @@ pas_option_L:
     rts
 
 open_ok:
-
     lda parameters.list
     cmp #2
     bne do_dir
@@ -1342,7 +1341,6 @@ open_ok:
     // lecture nom du disque / répertoire
 do_dir:
     swi directory_get_entry
-    bmi do_dir
     jcs exit
 
     lda format
@@ -1363,6 +1361,7 @@ next:
 
 pas_opt_page:
     swi directory_get_entry
+    bmi pas_opt_page
     jcs exit
     bne pas_blocs
 
