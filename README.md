@@ -91,11 +91,14 @@ Some variables are pre-allocated
     Variable with name in R0 = pstring R1
 
 **var_get** : 
+```
     R1 = value of variable with name in R0 
     On exit : C=1 variable found, C=0 variable not found
-
-**var_del** : 
-    Delete variable #A
+```
+**var_del** :
+```
+    Delete variable #X
+```
 
 ### Directory routines
 
@@ -106,8 +109,9 @@ Some variables are pre-allocated
 C=1 if A is a digit
 
 **set_bit**
-
+```
 Y = bit to set in A
+```
 
 ### List of BIOS entry points
 
@@ -117,21 +121,31 @@ Y = bit to set in A
     Restart the shell, cold start
 
 **file_load**
+```
     Load a binary file for running, checks the presence of a BASIC stubs with a SYS instruction and starts code at $080D (2061)
-
+```
 **error**
+```
     Print the error message in R0
-
+```
 ## Screen & Keyboard I/O
 
 **pprint**
+```
     Print a pString, after expansion of contents
-
+```
 **pprintnl**
+```
     Same as pprint, with a new line added
-
-(**print_int** to add to BIOS)
-
+```
+**print_int**
+```
+    X = print format
+    R0 = value to print
+    Format : %PL123456
+        bit 6 = suppress heading spaces
+        bit 7 = pad with spaces (default is '0')
+```
 **input**
 
 **pprinthex**
@@ -139,6 +153,7 @@ Y = bit to set in A
 **pprinthex8**
 
 **print_path**
+
 
 ## Conversions
 
@@ -150,34 +165,40 @@ Y = bit to set in A
 
 ## Variables
 
-**var_set** : 
+**var_set**
+```
     Variable with name in R0 = pstring R1
-
-**var_get** : 
+```
+**var_get**
+```
     R1 = value of variable with name in R0 
     On exit : C=1 variable found, C=0 variable not found
-
-**var_del** : 
-    Delete variable #A
-
+```
+**var_del**
+```
+    Delete variable #X
+```
 **var_count**
+```
     Count number of available variables or internal commands.
     R0 = source variables space
     On exit : A = number of variables
 
     shell.var_names = variables space
     shell.internal_commands = internal commands space
+```
 
 ## Lists
 
 **list_add**
 
 **list_get**
+```
     Returns the Xths value in the list
     R0 = list object
     X = element number to retrieve
     On exit : C=1 and R0=value if OK, C=0 otherwhise
-
+```
 **list_del**
 
 **list_print**
@@ -186,6 +207,14 @@ Y = bit to set in A
 
 **list_reset**
 
+## Parameters
+
+**parameters_loop**
+```
+    call subroutine for all filenames in parameters
+    r0 = subroutine address
+    r1 = address of parameters list
+```
 ## Disk I/O
 
 **set_device**
@@ -193,20 +222,22 @@ Y = bit to set in A
 **prep_path**
 
 **build_path**
+```
     Build a path pString from a ppath
     R1 = ppath source
     R0 = address of target pString
     C=0 adds : to filename, C=1 : no separator added
     On exit: r0 contains path:name
-
+```
 **lsblk**
 
 **get_device_status**
+```
     Get current device status
     C=1 prints result on screen, C=0 silent mode
     On exit : status code into R0, 2 positions
     C=0 if code 00, C=1 otherwise
-
+```
 **set_device_from_path**
 
 ## pStrings

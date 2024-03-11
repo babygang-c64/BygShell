@@ -673,7 +673,7 @@ options_ok:
     // paths sans device d'indiqué
     lda bios.device
     sta bios.save_device
-    swi parameters_loop, do_cat
+    swi parameters_loop, do_cat, parameters.list
     clc
     rts
 
@@ -1137,7 +1137,7 @@ commande:
 cmd_rm:
 {
     needs_parameters(1)
-    swi parameters_loop, do_rm
+    swi parameters_loop, do_rm, parameters.list
     clc
     rts
 
@@ -1871,7 +1871,7 @@ cmd_koala:
     mov r1, #options_koala
     jsr check_options
     sta options
-    swi parameters_loop, do_koala
+    swi parameters_loop, do_koala, parameters.list
     clc
     ldx #0
     swi picture_show

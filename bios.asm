@@ -1962,6 +1962,7 @@ pas_creation:
     mov r0, rdest
     swi str_cpy
     pla
+    tax
     jsr do_var_del
     mov r0, rsrc
     mov r1, #work_buffer
@@ -1977,12 +1978,12 @@ pas_creation:
 
 //---------------------------------------------------------------
 // do_var_del : supprime une variable
-// A = numéro variable à supprimer
+// X = numéro variable à supprimer
 //---------------------------------------------------------------
 
 do_var_del:
 {
-    sta to_supp
+    stx to_supp
 
     // source
     mov r0, #var_names
@@ -2100,8 +2101,6 @@ to_supp:
 nb_to_copy:
     .byte 0
 }
-
-.print "do_var_del=$"+toHexString(do_var_del)
 
 //---------------------------------------------------------------
 // lookup_var : teste si une variable existe,
@@ -3893,22 +3892,26 @@ key_ok:
 // paramètres dans la liste
 //
 // entrée r0 adresse sous-routine
+// r1 = adresse plist des paramètres
 // dans la boucle r0 = paramètre transmis
 //----------------------------------------------------
 
 do_parameters_loop:
 {
+    mov a, (r1)
+    sta nb_params
+    mov adr_params, r1
     mov jump, r0
-    // boucle si il y a plusieurs noms de fichiers
     ldx #1
-    stx pos_cat
+    stx pos_param
 
-encore_cat:
-    swi list_get, shell.parameters.list
+do_params:
+    mov r0, adr_params
+    swi list_get
     swi is_filter
     bcc no_filter
 
-    // filtre : entrées de répertoire
+    // si filtre : traite entrées de répertoire
     swi directory_open
     ldx #bios.directory.TYPE_FILES
     swi directory_set_filter
@@ -3925,19 +3928,16 @@ boucle_entries:
 
 no_filter:
     jsr do_jump
-    bcs fin_cat
+    bcs erreur_exec
 
 fin_boucle_entries:
     swi directory_close
 next_param:
-    inc pos_cat
-    ldx pos_cat
-    cpx shell.parameters.list
-    jne encore_cat
+    inc pos_param
+    ldx pos_param
+    cpx nb_params
+    bne do_params
     clc
-
-    // fin avec erreur
-fin_cat:
     rts
 
 do_jump:
@@ -3948,9 +3948,11 @@ do_jump:
 erreur_exec:
     rts
 
-nb_entries:
+adr_params:
+    .word 0
+nb_params:
     .byte 0
-pos_cat:
+pos_param:
     .byte 0
 }
 
