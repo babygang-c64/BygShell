@@ -1554,13 +1554,13 @@ command_execute:
 script_execute:
 {
     // ouverture en lecture, nom dans r0
-    ldx #7
+    ldx #8
     clc
     swi file_open
-    jcs error
+    bcs error
 
 next_line:
-    ldx #7
+    ldx #8
     sec
     lda #255
     sta input_buffer
@@ -1575,13 +1575,17 @@ next_line:
     cmp #'#'
     beq next_line
 
+    lda #'>'
+    jsr CHROUT
+    swi pprintnl
+
     // sinon traite la ligne
     mov r0, #input_buffer
     jsr command_process
     jmp next_line
 
 fini:
-    ldx #7
+    ldx #8
     swi file_close
     clc
     rts
