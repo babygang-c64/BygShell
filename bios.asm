@@ -67,7 +67,6 @@
 .label key_wait=51
 .label directory_get_entries=52
 .label wait=53
-.label file_open_no_rw=54
 
 bios_jmp:
     .word do_reset
@@ -124,8 +123,7 @@ bios_jmp:
     .word do_key_wait
     .word do_directory_get_entries
     .word do_wait
-    .word do_file_open_no_rw
-
+    
 * = * "BIOS code"
 
 bios_reset:
@@ -3521,7 +3519,7 @@ ecriture:
     inc pos_lecture
     dec nb_lu
     bne ecriture
-    //jsr CLRCHN
+    jsr CLRCHN
     clc
     rts
 
@@ -3544,7 +3542,7 @@ pos_lecture:
 do_buffer_read:
 {
     stc lecture_ligne
-    //jsr CHKIN
+    jsr CHKIN
 
     swi str_len
     sta lgr_max
@@ -3573,6 +3571,7 @@ fin_buffer:
     sta (zr0),y
     jsr READST
     bne fin_lecture
+    jsr CLRCHN
     clc
     rts
 
@@ -3586,6 +3585,7 @@ pas_erreur:
     lda nb_lu
     ldy #0
     sta (zr0),y
+    jsr CLRCHN
     sec
     rts
 
@@ -3598,49 +3598,14 @@ nb_lu:
 //----------------------------------------------------
 // file_open : ouverture fichier en lecture
 // r0 : pstring nom, X = canal
-// C=0 : lecture, C=1 : écriture
 // retour C=0 OK, C=1 KO
 // le fichier est ouvert en X,<device>,X
 //----------------------------------------------------
 
-//msg_nom:
-//    pstring("NOM=[%P5]")
 do_file_open:
 {
-    stc read_write
     stx canal
-    jsr do_file_open_no_rw
-    bcc do_rw
-    rts
-do_rw:
-    // si read = CHKIN, sinon CHKOUT
-    lda read_write
-    bne write
-    ldx canal
-    jsr CHKIN
-    clc
-    rts
-write:
-    ldx canal
-    jsr CHKOUT
-    clc
-    rts 
-
-canal:
-    .byte 0
-read_write:
-    .byte 0
-}
-
-do_file_open_no_rw:
-{ 
-    stx canal
-    //push r0
-    //str_r(5, 0)
-    //call_bios(bios.pprintnl, msg_nom)
-    // ensure current device
-    //jsr bios.do_set_device
-    //pop r0
+    // jsr bios.do_set_device
 
     // set name
     ldy #0

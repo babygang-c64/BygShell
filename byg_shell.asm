@@ -399,10 +399,10 @@ cmd_cp:
     mov r1, #work_path
     swi build_path, work_buffer2
 
-    // open fichier en entrée    
+    // open fichier en entrée #4  
     clc
-    ldx #2
-    swi file_open_no_rw, work_buffer2
+    ldx #4
+    swi file_open, work_buffer2
     jcs erreur_open_1
 
     // path destination sans séparateur path<:>nom
@@ -415,29 +415,32 @@ cmd_cp:
     mov r1, #write_str
     swi str_cat
 
-    // open fichier en sortie
+    // open fichier en sortie #5
     
     sec
-    ldx #3
-    swi file_open_no_rw, work_buffer2
+    ldx #5
+    swi file_open, work_buffer2
     bcs erreur_open_2
 
 
 copie_fichier:
-    ldx #2
-    jsr CHKIN
+    lda #'R'
+    jsr CHROUT
+    ldx #4
     lda #255
     sta work_io
-    ldx #2
-    clc
-    swi buffer_read
+    swi buffer_read, work_io
     stc lecture_finie
     jsr CLRCHN
-    ldx #3
-    jsr CHKOUT
-    ldx #3
-    swi buffer_write    
+    lda #20
+    jsr CHROUT
+    lda #'W'
+    jsr CHROUT
+    ldx #5
+    swi buffer_write, work_io
     jsr CLRCHN
+    lda #20
+    jsr CHROUT
     lda lecture_finie
     bne fin_copie
     jmp copie_fichier
@@ -453,14 +456,14 @@ lecture_finie:
     .byte 0
 
 close_files:
-    ldx #3
+    ldx #4
     swi file_close
-    ldx #2
+    ldx #5
     swi file_close
     rts
 
 erreur_open_2:
-    ldx #3
+    ldx #5
     swi file_close
     swi error, msg_error.write_error
     jmp close1
@@ -469,7 +472,7 @@ erreur_open_1:
     swi error, msg_error.read_error
 
 close1:
-    ldx #2
+    ldx #4
     swi file_close
     sec
     rts
@@ -782,18 +785,23 @@ do_cat:
     jsr option_pagine
 
     // ouverture en lecture, nom dans r0
-    ldx #2
+    ldx #4
     clc
     swi file_open
     jcs error
 
-    // passe le canal en lecture
-    //ldx #2
-    //jsr CHKIN
+    // passe le canal en lecture si pas hexdump
+
+    lda cmd_cat.options
+    and #OPT_H
+    bne open_hex
+    ldx #4
+    jsr CHKIN
+open_hex:
 
     // test pour file not found
-    jsr READST
-    bne end
+    //jsr READST
+    //bne end
 
     jsr option_start_address
 
@@ -802,7 +810,7 @@ boucle_cat:
     and #OPT_H
     beq pas_hexdump
 
-    ldx #2
+    ldx #4
     lda #8
     sta buffer_hexdump
     clc
@@ -852,12 +860,8 @@ end:
     and #2
     bne error
 
-    ldx #2
+    ldx #4
     swi file_close
-    // tmp, pas de récup device pour test
-    clc
-    rts
-
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     clc
@@ -866,7 +870,7 @@ end:
     // erreur : file not found
 
 error:
-    ldx #2
+    ldx #4
     swi file_close
     ldx bios.save_device
     jsr bios.do_set_device_from_int
@@ -1344,11 +1348,11 @@ pas_option_L:
     sta tosize40
 
     // ouverture $
-    ldx #2
+    ldx #4
     clc
     swi file_open, dirname
-    //ldx #2
-    //jsr CHKIN
+    ldx #4
+    jsr CHKIN
 
     // lecture nom du disque / répertoire
 do_dir:
@@ -1467,7 +1471,7 @@ exit:
     jsr CHROUT
 pas_impair:
 
-    ldx #2
+    ldx #4
     swi file_close
     rts
 
@@ -1771,8 +1775,7 @@ script_execute:
     jcs error
 
 next_line:
-    //ldx #7
-    //jsr CHKIN
+    ldx #7
     sec
     lda #255
     sta input_buffer
