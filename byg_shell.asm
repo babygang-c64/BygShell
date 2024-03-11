@@ -8,6 +8,96 @@
 #import "macros.asm"
 #import "kernal.asm"
 
+//===============================================================
+// Shell and BIOS workspace data
+//===============================================================
+
+* = $7000 "Workspace data"
+
+//---------------------------------------------------------------
+// espace pour les scripts
+//---------------------------------------------------------------
+
+    .align $100
+script_data:
+    .byte 0
+
+    .align $100
+script_labels:
+    .byte 0
+
+//---------------------------------------------------------------
+// espace de nom et valeurs pour les variables
+//---------------------------------------------------------------
+
+    .align $100
+
+var_names:
+    pstring("PROMPT")
+    .word prompt_value
+    pstring("PATH")
+    .word path_value
+    pstring("DEVICE")
+    .word device_value
+    pstring("CONFIG")
+    .word config_value
+    pstring("VERSION")
+    .word version_value
+
+variables_end:
+    .byte 0
+
+    .align $100
+* = * "variables values space"
+var_values:
+prompt_value:
+    pstring("%VDEVICE%>")
+path_value:
+    pstring("//PATH/")
+device_value:
+    pstring("10")
+config_value:
+    pstring("9://CONFIG/")
+version_value:
+    pstring("0.2")
+
+values_end:
+
+//---------------------------------------------------------------
+// buffers de saisie et de travail
+//---------------------------------------------------------------
+
+    .align $100
+* = * "input buffer"
+input_buffer:
+    .fill $100,0
+* = * "work buffer"
+work_buffer:
+    .fill $100,0
+work_buffer2:
+    .fill $100,0
+work_io:
+    .fill $100,0
+work_entries:
+    .fill $100,0
+work_path:
+    ppath(128)
+work_path2:
+    ppath(128)
+
+work_name:
+    .fill $40,0
+work_pprint:
+    .fill $80,0
+
+.print "work_buffer=$"+toHexString(work_buffer)
+.print "work_path=$"+toHexString(work_path)
+.print "work_path.path=$"+toHexString(work_path.path)
+.print "work_path.filename=$"+toHexString(work_path.filename)
+.print "work_path2=$"+toHexString(work_path2)
+.print "work_name=$"+toHexString(work_name)
+.print "work_pprint=$"+toHexString(work_pprint)
+
 //====================================================
 // SHELL
 // start address moved into $8000 cartridge space
@@ -752,7 +842,7 @@ boucle_cat:
     
 pas_hexdump:
 
-    swi file_readline
+    swi file_readline, work_buffer
     bcs derniere_ligne
     jsr affiche_ligne
 
@@ -1553,6 +1643,10 @@ command_execute:
 
 script_execute:
 {
+    swi script_read
+    clc
+    rts
+
     // ouverture en lecture, nom dans r0
     ldx #8
     clc
@@ -2344,82 +2438,6 @@ history_kw:
     pstring("HISTORY")
     .word shell.cmd_history
     .byte 0
-
-//===============================================================
-// BIOS workspace data
-//===============================================================
-
-//---------------------------------------------------------------
-// espace de nom et valeurs pour les variables
-//---------------------------------------------------------------
-
-    .align $100
-* = * "variable names space"
-var_names:
-    pstring("PROMPT")
-    .word prompt_value
-    pstring("PATH")
-    .word path_value
-    pstring("DEVICE")
-    .word device_value
-    pstring("CONFIG")
-    .word config_value
-    pstring("VERSION")
-    .word version_value
-
-variables_end:
-    .byte 0
-
-    .align $100
-* = * "variables values space"
-var_values:
-prompt_value:
-    pstring("%VDEVICE%>")
-path_value:
-    pstring("//PATH/")
-device_value:
-    pstring("10")
-config_value:
-    pstring("9://CONFIG/")
-version_value:
-    pstring("0.2")
-
-values_end:
-
-//---------------------------------------------------------------
-// buffers de saisie et de travail
-//---------------------------------------------------------------
-
-    .align $100
-* = * "input buffer"
-input_buffer:
-    .fill $100,0
-* = * "work buffer"
-work_buffer:
-    .fill $100,0
-work_buffer2:
-    .fill $100,0
-work_io:
-    .fill $100,0
-work_entries:
-    .fill $100,0
-work_path:
-    ppath(128)
-work_path2:
-    ppath(128)
-
-work_name:
-    .fill $40,0
-work_pprint:
-    .fill $80,0
-
-.print "work_buffer=$"+toHexString(work_buffer)
-.print "work_path=$"+toHexString(work_path)
-.print "work_path.path=$"+toHexString(work_path.path)
-.print "work_path.filename=$"+toHexString(work_path.filename)
-.print "work_path2=$"+toHexString(work_path2)
-.print "work_name=$"+toHexString(work_name)
-.print "work_pprint=$"+toHexString(work_pprint)
 
 //---------------------------------------------------------------
 // messages d'erreur

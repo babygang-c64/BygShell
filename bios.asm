@@ -69,6 +69,7 @@
 .label wait=53
 .label pprint_int=54
 .label parameters_loop=55
+.label script_read=56
 
 bios_jmp:
     .word do_reset
@@ -127,6 +128,7 @@ bios_jmp:
     .word do_wait
     .word do_print_int
     .word do_parameters_loop
+    .word do_script_read
     
 * = * "BIOS code"
 
@@ -3357,6 +3359,8 @@ do_file_close:
 
 //----------------------------------------------------
 // file_readline : lecture d'une ligne dans un fichier
+//
+// r0 = buffer réception
 // sortie : work_buffer, A = longueur
 // c=0 : ok, c=1 : fin de fichier
 // lecture de 255 octets max
@@ -3365,7 +3369,9 @@ do_file_close:
 do_file_readline:
 {
     ldy #0
-    sty work_buffer
+    tya
+    mov (r0), a
+    iny
 
 boucle_lecture:
     jsr READST
@@ -3375,7 +3381,7 @@ boucle_lecture:
     beq fin_ligne
     cmp #10
     beq fin_ligne
-    sta work_buffer+1,y
+    sta (zr0),y
     iny
     bne boucle_lecture
     
@@ -3386,12 +3392,18 @@ erreur:
     rts
 
 fin_ligne:
-    sty work_buffer
+    dey
+    tya
+    ldy #0
+    sta (zr0),y
     clc
     rts
 
 fin_lecture:
-    sty work_buffer
+    dey
+    tya
+    ldy #0
+    sta (zr0),y
     sec
     rts
 }
@@ -3898,6 +3910,7 @@ key_ok:
 
 do_parameters_loop:
 {
+    ldy #0
     mov a, (r1)
     sta nb_params
     mov adr_params, r1
@@ -3929,6 +3942,7 @@ boucle_entries:
 no_filter:
     jsr do_jump
     bcs erreur_exec
+    jmp next_param
 
 fin_boucle_entries:
     swi directory_close
@@ -4053,6 +4067,60 @@ go_txt:
 
 has_keypress:
     .byte 0
+}
+
+//===============================================================
+// scripts routines :
+//
+// read
+// execute
+//===============================================================
+
+//---------------------------------------------------------------
+// script_read : read script into memory
+//
+// R0 = script file name
+//---------------------------------------------------------------
+
+do_script_read:
+{
+    ldx #8
+    clc
+    swi file_open
+    bcc script_found
+    sec
+    rts
+
+script_found:
+    ldx #8
+    jsr CHKIN
+
+next_line:
+    swi file_readline, input_buffer
+    bcs fini
+
+    mov r0, #input_buffer
+
+    // si ligne vide, empty ou commence par # = ignore
+    swi str_empty
+    bcc next_line
+    ldy #1
+    mov a, (r0)
+    cmp #'#'
+    beq next_line
+    swi pprintnl, input_buffer
+
+    jsr CLRCHN
+    jsr shell.command_process
+    ldx #8
+    jsr CHKIN
+    jmp next_line
+
+fini:
+    ldx #8
+    swi file_close
+    clc
+    rts
 }
 
 //===============================================================

@@ -340,6 +340,9 @@ Y = bit to set in A
 ```
 **file_readline**
 ```
+    Reads line from current opened input channel into workbuffer
+    C=1 : end of file
+    A = length read
 ```
 **buffer_read**
 ```
