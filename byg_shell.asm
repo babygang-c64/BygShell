@@ -535,72 +535,6 @@ options_ok:
 }
 
 //----------------------------------------------------
-// boucle_params : execute tant qu'il y a des 
-// paramètres dans la liste
-// entrée r0 adresse sous-routine
-// dans la boucle r0 = paramètre transmis
-//----------------------------------------------------
-
-boucle_params:
-{
-    mov jump, r0
-    // boucle si il y a plusieurs noms de fichiers
-    ldx #1
-    stx pos_cat
-
-encore_cat:
-    swi list_get, parameters.list
-    swi is_filter
-    bcc no_filter
-
-    // filtre : entrées de répertoire
-    swi directory_open
-    ldx #bios.directory.TYPE_FILES
-    swi directory_set_filter
-    
-boucle_entries:
-    swi directory_get_entry
-    bcs fin_boucle_entries
-    beq fin_boucle_entries
-    bmi boucle_entries
-    jsr CLRCHN
-    swi pprintnl, bios.directory.entry.filename
-    mov r0, #bios.directory.entry.filename
-    jsr do_jump
-    jmp boucle_entries
-
-no_filter:
-    jsr do_jump
-    bcs fin_cat
-
-fin_boucle_entries:
-    swi directory_close
-next_param:
-    inc pos_cat
-    ldx pos_cat
-    cpx parameters.list
-    jne encore_cat
-    clc
-
-    // fin avec erreur
-fin_cat:
-    rts
-
-do_jump:
-    jsr jump:$fce2
-    bcs erreur_exec
-    clc
-
-erreur_exec:
-    rts
-
-nb_entries:
-    .byte 0
-pos_cat:
-    .byte 0
-}
-
-//----------------------------------------------------
 // option_pagine : gestion option de pagination pour les
 // affichages dans CAT / LS
 // entrée : si C=1 alors initialisation
@@ -739,9 +673,9 @@ options_ok:
     // paths sans device d'indiqué
     lda bios.device
     sta bios.save_device
-
-    mov r0, #do_cat
-    jmp boucle_params
+    swi parameters_loop, do_cat
+    clc
+    rts
 
 options:
     .byte 0
@@ -1203,8 +1137,9 @@ commande:
 cmd_rm:
 {
     needs_parameters(1)
-    mov r0, #do_rm
-    jmp boucle_params
+    swi parameters_loop, do_rm
+    clc
+    rts
 
 do_rm:
     mov r1, #commande
@@ -1936,9 +1871,7 @@ cmd_koala:
     mov r1, #options_koala
     jsr check_options
     sta options
-
-    mov r0, #do_koala
-    jsr boucle_params
+    swi parameters_loop, do_koala
     clc
     ldx #0
     swi picture_show

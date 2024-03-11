@@ -68,6 +68,7 @@
 .label directory_get_entries=52
 .label wait=53
 .label pprint_int=54
+.label parameters_loop=55
 
 bios_jmp:
     .word do_reset
@@ -125,6 +126,7 @@ bios_jmp:
     .word do_directory_get_entries
     .word do_wait
     .word do_print_int
+    .word do_parameters_loop
     
 * = * "BIOS code"
 
@@ -3884,6 +3886,72 @@ wait_key:
 key_ok:
     clc
     rts
+}
+
+//----------------------------------------------------
+// parameters_loop : execute tant qu'il y a des 
+// paramètres dans la liste
+//
+// entrée r0 adresse sous-routine
+// dans la boucle r0 = paramètre transmis
+//----------------------------------------------------
+
+do_parameters_loop:
+{
+    mov jump, r0
+    // boucle si il y a plusieurs noms de fichiers
+    ldx #1
+    stx pos_cat
+
+encore_cat:
+    swi list_get, shell.parameters.list
+    swi is_filter
+    bcc no_filter
+
+    // filtre : entrées de répertoire
+    swi directory_open
+    ldx #bios.directory.TYPE_FILES
+    swi directory_set_filter
+    
+boucle_entries:
+    swi directory_get_entry
+    bcs fin_boucle_entries
+    beq fin_boucle_entries
+    bmi boucle_entries
+    jsr CLRCHN
+    mov r0, #bios.directory.entry.filename
+    jsr do_jump
+    jmp boucle_entries
+
+no_filter:
+    jsr do_jump
+    bcs fin_cat
+
+fin_boucle_entries:
+    swi directory_close
+next_param:
+    inc pos_cat
+    ldx pos_cat
+    cpx shell.parameters.list
+    jne encore_cat
+    clc
+
+    // fin avec erreur
+fin_cat:
+    rts
+
+do_jump:
+    jsr jump:$fce2
+    bcs erreur_exec
+    clc
+
+erreur_exec:
+    rts
+
+nb_entries:
+    .byte 0
+pos_cat:
+    .byte 0
 }
 
 //===============================================================
