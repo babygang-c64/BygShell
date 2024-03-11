@@ -251,22 +251,6 @@ pos_param:
     .byte 0
 
 //----------------------------------------------------
-// cmd_keytest : test clavier
-//----------------------------------------------------
-
-cmd_keytest:
-{
-    jsr GETIN
-    beq cmd_keytest
-    sta zr0l
-    swi pprinthex8
-    lda #13
-    jsr CHROUT
-    clc
-    rts
-}
-
-//----------------------------------------------------
 // cmd_lsblk : détecte les disques, retour A = nb disques
 //----------------------------------------------------
 
@@ -2441,8 +2425,6 @@ internal_commands:
     .word shell.cmd_help
     pstring("LSD")
     .word shell.cmd_lsblk
-    pstring("KEYTEST")
-    .word shell.cmd_keytest
     pstring("CD")
     .word shell.cmd_cd
     pstring("CMD")
