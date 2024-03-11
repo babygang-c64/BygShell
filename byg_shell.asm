@@ -674,6 +674,7 @@ msg_suite:
 cmd_input:
 {
     .label OPT_K=1
+    .label OPT_P=2
 
     mov r1, #options_input
     jsr check_options
@@ -716,6 +717,16 @@ wait_key:
 do_wait:
     jsr GETIN
     beq do_wait
+    tax
+    lda options
+    and #OPT_P
+    beq pas_opt_p
+    stx zr0l
+    swi pprinthex8
+
+pas_opt_p:
+    lda #13
+    jsr CHROUT
     clc
     rts
 
@@ -727,7 +738,7 @@ invite:
     rts
 
 options_input:
-    pstring("K")
+    pstring("KP")
 options:
     .byte 0
 }
