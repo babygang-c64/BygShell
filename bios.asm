@@ -67,6 +67,7 @@
 .label key_wait=51
 .label directory_get_entries=52
 .label wait=53
+.label file_open_no_rw=54
 
 bios_jmp:
     .word do_reset
@@ -123,6 +124,7 @@ bios_jmp:
     .word do_key_wait
     .word do_directory_get_entries
     .word do_wait
+    .word do_file_open_no_rw
 
 * = * "BIOS code"
 
@@ -3507,12 +3509,11 @@ lgr_chaine:
 
 do_buffer_write:
 {
-    //jsr CHKOUT
+    jsr CHKOUT
     swi str_len
     sta nb_lu
     iny
     sty pos_lecture
-
 ecriture:
     ldy pos_lecture
     lda (zr0),y
@@ -3548,26 +3549,24 @@ do_buffer_read:
     swi str_len
     sta lgr_max
     sty nb_lu
-
 lecture:
     jsr READST
     bne fin_lecture
-    inc nb_lu
     jsr CHRIN
     ldy lecture_ligne
     beq pas_test
     cmp #13
-    beq fin_ligne
+    beq fin_buffer
     cmp #10
-    beq fin_ligne
+    beq fin_buffer
 pas_test:
     ldy nb_lu
+    iny
     sta (zr0),y
+    inc nb_lu
     cpy lgr_max:#255
     beq fin_buffer
     bne lecture
-fin_ligne:
-    dec nb_lu
 fin_buffer:
     lda nb_lu
     ldy #0
@@ -3610,12 +3609,38 @@ do_file_open:
 {
     stc read_write
     stx canal
-    push r0
+    jsr do_file_open_no_rw
+    bcc do_rw
+    rts
+do_rw:
+    // si read = CHKIN, sinon CHKOUT
+    lda read_write
+    bne write
+    ldx canal
+    jsr CHKIN
+    clc
+    rts
+write:
+    ldx canal
+    jsr CHKOUT
+    clc
+    rts 
+
+canal:
+    .byte 0
+read_write:
+    .byte 0
+}
+
+do_file_open_no_rw:
+{ 
+    stx canal
+    //push r0
     //str_r(5, 0)
     //call_bios(bios.pprintnl, msg_nom)
     // ensure current device
-    jsr bios.do_set_device
-    pop r0
+    //jsr bios.do_set_device
+    //pop r0
 
     // set name
     ldy #0
@@ -3636,7 +3661,6 @@ not_directory:
     // si 0 ou 1 ça force read / write sur du PRG
     lda canal
     ldx bios.device
-
     jsr SETLFS
 
     jsr OPEN    
@@ -3645,17 +3669,6 @@ not_directory:
     //sec // tmp
     swi get_device_status
     bcs error
-
-    // si read = CHKIN, sinon CHKOUT
-    lda read_write
-    bne write
-    ldx canal
-    jsr CHKIN
-    clc
-    rts
-write:
-    ldx canal
-    jsr CHKOUT
     clc
     rts
 
@@ -3665,8 +3678,6 @@ error:
     sec
     rts
 
-read_write:
-    .byte 0
 canal:
     .byte 0
 }

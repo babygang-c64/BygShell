@@ -372,6 +372,10 @@ error:
 
 //----------------------------------------------------
 // cmd_cp : copie
+//
+// objectifs : 
+// copie fichier 1 pour 1
+// copier les n-1 fichiers vers n si n est un path
 //----------------------------------------------------
 
 cmd_cp:
@@ -384,26 +388,21 @@ cmd_cp:
     swi list_get, parameters.list
     mov r1, #work_path
     swi prep_path
-    //swi print_path, work_path
 
     ldx #2
     swi list_get, parameters.list
     mov r1, #work_path2
     swi prep_path
-    //swi print_path, work_path2
 
     // path source sans séparateur path<:>nom
     sec
     mov r1, #work_path
     swi build_path, work_buffer2
-    //swi pprintnl, work_buffer
 
-    // open fichier en entrée
-    
-    swi set_device_from_path, work_path
+    // open fichier en entrée    
     clc
     ldx #2
-    swi file_open, work_buffer2
+    swi file_open_no_rw, work_buffer2
     jcs erreur_open_1
 
     // path destination sans séparateur path<:>nom
@@ -411,46 +410,46 @@ cmd_cp:
     mov r1, #work_path2
     swi build_path, work_buffer2
 
+    // avec suffixe pour écriture
     mov r0, #work_buffer2
     mov r1, #write_str
     swi str_cat
-    //swi pprintnl, work_buffer2
 
     // open fichier en sortie
     
-    swi set_device_from_path, work_path2
     sec
     ldx #3
-    swi file_open, work_buffer2
+    swi file_open_no_rw, work_buffer2
     bcs erreur_open_2
-
-    // copie fichier 1 vers 2
 
 
 copie_fichier:
     ldx #2
     jsr CHKIN
-    clc
     lda #255
-    sta work_buffer
+    sta work_io
     ldx #2
-    swi buffer_read, work_buffer
-    stc copie_finie
+    clc
+    swi buffer_read
+    stc lecture_finie
+    jsr CLRCHN
     ldx #3
     jsr CHKOUT
-    swi buffer_write, work_buffer
-    lda copie_finie
-    beq copie_fichier
+    ldx #3
+    swi buffer_write    
+    jsr CLRCHN
+    lda lecture_finie
+    bne fin_copie
+    jmp copie_fichier
 
+fin_copie:
     jsr close_files
-
     ldx bios.save_device
     jsr bios.do_set_device_from_int
-    
     clc
     rts
 
-copie_finie:
+lecture_finie:
     .byte 0
 
 close_files:
@@ -2609,6 +2608,8 @@ input_buffer:
 work_buffer:
     .fill $100,0
 work_buffer2:
+    .fill $100,0
+work_io:
     .fill $100,0
 work_entries:
     .fill $100,0
