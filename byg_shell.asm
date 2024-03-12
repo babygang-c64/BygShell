@@ -470,15 +470,7 @@ cmd_cp:
     sec
     mov r1, #work_path
     swi build_path, work_buffer2
-
-    lda bios.device
-    sta bios.device_source
-    lda work_path+1
-    beq pas_device_source
-    sta bios.device_source
-pas_device_source:
-
-    ldx bios.device_source
+    stx bios.device_source
     jsr bios.do_set_device_from_int
 
     // open fichier en entrée #4  
@@ -491,13 +483,7 @@ pas_device_source:
     sec
     mov r1, #work_path2
     swi build_path, work_buffer2
-
-    lda bios.device
-    sta bios.device_dest
-    lda work_path2+1
-    beq pas_device_dest
-    sta bios.device_dest
-pas_device_dest:
+    stx bios.device_dest
 
     // avec suffixe pour écriture
     mov r0, #work_buffer2

@@ -3671,7 +3671,8 @@ canal:
 // entrée : r0 = adresse pstring résultat
 // r1 = ppath source
 // si C=0 ajout :, si C=1 pas d'ajout séparateur ":"
-// sortie = r0 à jour = path:nom
+// sortie = r0 à jour = path:nom 
+// X = device du path ou device courant
 //----------------------------------------------------
 
 do_build_path:
@@ -3716,6 +3717,13 @@ pas_ajout_sep:
     swi str_cat
 
 pas_name:
+    ldx bios.device
+    ldy #1
+    lda (zsrc), y
+    beq pas_device
+    tax
+
+pas_device:
     clc
     rts
 
