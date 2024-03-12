@@ -2625,7 +2625,7 @@ str_partition:
 .print "str_partition=$"+toHexString(str_partition)
 
     // convert_device_partition : conversion en int
-    // et stockage dans le PPATH, mise à jour TYPE
+    // et stockage dans le PPATH
 
 convert_device_partition:
     push r0
@@ -2633,6 +2633,11 @@ convert_device_partition:
     mov r0, #str_device
     jsr bios.do_str2int
     pha
+    mov r1, r2
+    ldy #1
+    pla
+    sta (zr1),y
+
     mov r0, #str_partition
     jsr bios.do_str2int
     pha
@@ -2640,21 +2645,6 @@ convert_device_partition:
     ldy #2
     pla
     sta (zr1),y
-    beq pas_int_partition
-    ldy #0
-    lda (zr1),y
-    ora #PPATH.WITH_PARTITION
-    sta (zr1),y
-pas_int_partition:
-    ldy #1
-    pla
-    sta (zr1),y
-    beq pas_int_device
-    dey
-    lda (zr1),y
-    ora #PPATH.WITH_DEVICE
-    sta (zr1),y
-pas_int_device:
     ldy #0
     pop r0
     clc
@@ -2747,26 +2737,46 @@ lgr_copie:
 update_path_type:
     ldy #0
     lda (zr1),y
-    and #PPATH.WITH_NAME
-    bne pas_update
+    sta type
+    iny
     lda (zr1),y
-    sta lu
-    ldy #3
+    beq pas_device
+    lda type
+    ora #PPATH.WITH_DEVICE
+    sta type
+
+pas_device:
+    iny
     lda (zr1),y
-    clc
-    adc #4
-    tay
+    beq pas_partition
+    lda type
+    ora #PPATH.WITH_PARTITION
+    sta type
+
+pas_partition:
+    iny
     lda (zr1),y
-    beq update_path_seul
-    lda lu
-    ora #PPATH.WITH_NAME
-    sta lu
-update_path_seul:
-    lda lu
+    beq pas_path
+    lda type
     ora #PPATH.WITH_PATH
+    sta type
+
+pas_path:
+    clc
+    tya
+    adc (zr1),y
+    tay
+    iny
+    lda (zr1),y
+    beq pas_nom
+    lda type
+    ora #PPATH.WITH_NAME
+    sta type
+
+pas_nom:
     ldy #0
+    lda type
     sta (zr1),y
-pas_update:
     rts
 
 .print "lgr_entree=$"+toHexString(lgr_entree)
@@ -2780,6 +2790,8 @@ lgr_path:
 lgr_entree:
     .byte 0
 mode_path:
+    .byte 0
+type:
     .byte 0
 }
 
