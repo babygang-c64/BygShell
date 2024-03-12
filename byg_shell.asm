@@ -496,7 +496,7 @@ do_cp:
     mov r1, #work_path2
     swi build_path, work_buffer2
     stx bios.device_dest
-    lda work_path2+1
+    lda work_path2
     and #PPATH.WITH_NAME
     bne avec_nom
     // ajoute le nom si pas présent en destination
