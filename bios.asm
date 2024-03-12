@@ -3015,14 +3015,15 @@ do_lsblk:
     lda #0
     sta first_device
     sta nb_devices
+
 raz_devices:
     sta devices,y
     dey
     bpl raz_devices
 
-
     lda #8
     sta cur_device
+
 test_listen:
     lda cur_device
     ldy #0
@@ -3330,6 +3331,7 @@ aff_numero_drive:
     sta zr0h
     ldx #%00000011
     swi pprint_int
+    rts
 
 first_device:
     .byte 0
@@ -4518,6 +4520,7 @@ entry:
 .print "directory.entry.filename=$"+toHexString(directory.entry.filename)
 .print "directory.filter=$"+toHexString(directory.filter)
 .print "directory.filter_types=$"+toHexString(directory.filter_types)
+.print "devices=$"+toHexString(devices)
 
 // other
 
