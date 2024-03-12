@@ -455,16 +455,28 @@ cmd_cp:
     needs_parameters(2)
     lda bios.device
     sta bios.save_device
+
+    // destination = dernier paramètre
     swi list_size, parameters.list
-
-    ldx #1
-    swi list_get, parameters.list
-    mov r1, #work_path
-    swi prep_path
-
-    ldx #2
+    tax
+    dex
     swi list_get, parameters.list
     mov r1, #work_path2
+    swi prep_path
+    dec parameters.list
+
+    swi parameters_loop, do_cp, parameters.list
+    clc
+    rts
+
+write_str:
+    pstring(",P,W")
+}
+
+do_cp:
+{
+    // préparation path source, nom en entrée dans R0
+    mov r1, #work_path
     swi prep_path
 
     // path source sans séparateur path<:>nom
@@ -496,7 +508,7 @@ cmd_cp:
 avec_nom:
     // avec suffixe pour écriture
     mov r0, #work_buffer2
-    mov r1, #write_str
+    mov r1, #cmd_cp.write_str
     swi str_cat
 
 dest_ok:
@@ -566,9 +578,6 @@ close1:
     jsr bios.do_set_device_from_int
     sec
     rts
-
-write_str:
-    pstring(",P,W")
 }
 
 //----------------------------------------------------
@@ -670,7 +679,7 @@ msg_suite:
 // input [invite] <variable>
 // options :
 //  K = single key press
-// 
+//  P = print hex code of key pressed
 //----------------------------------------------------
 
 cmd_input:
