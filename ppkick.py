@@ -4,6 +4,10 @@ import sys
 
 
 def get_size(value):
+    """
+    get_size : get size of operand, 8 or 16 bits
+    """
+
     size = 16
     if value[0] == '$':
         if len(value) <= 3:
@@ -12,9 +16,16 @@ def get_size(value):
             size = 8
     return size
 
-
 def param_type(param):
-    # type param : r, w, a, i
+    """
+    param_type : get parameter type
+
+    r = register
+    w = word / address
+    a = accumulator
+    i = immediate value
+    s = sub / indirect value
+    """
 
     ptype = 'w'
     pval = param
@@ -47,6 +58,7 @@ def param_type(param):
 
 
 if len(sys.argv) != 3:
+    print('PPKICK v0.1\nBabygang extended 6510 instruction set pre-processor for kickass sources\n')
     print('ppkick <filein> <fileout>')
     quit()
 
@@ -102,12 +114,19 @@ for line in hin:
         #print('new [%s]' % newline)
         hout.write(newline + '\n')
 
-    # PUSH, POP, INC, DEC
+    # PUSH, POP, INC, DEC, INCW, DECW
 
     elif instruction in ['push', 'pop', 'inc', 'dec']:
         ptype0, pval0 = param_type(elems[1])
         if ptype0 == 'r':
             newline = instruction + '_r(' + pval0 + ')'
+        else:
+            newline = line
+        hout.write(newline + '\n')
+    elif instruction in ['incw', 'decw']:
+        ptype0, pval0 = param_type(elems[1])
+        if ptype0 == 'w':
+            newline = instruction[0:3] + '_w(' + pval0 + ')'
         else:
             newline = line
         hout.write(newline + '\n')

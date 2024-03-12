@@ -14,13 +14,13 @@ If the command name is a binary then it is launched (for now starting at $080d) 
 ## Data structures
 
 ### 16 bit registers
-
+```
 8 x 16bit registers (R0 to R7) are stored on ZP starting at address $39
 They are referenced with the following pre-defined labels :
 zr0 to zr1 : base address of registers
 zr0l to zr1l : lower bytes of registers
 zr0h to zr1h : higher bytes of registers
-
+```
 ### macro instructions with pre-processor for 16 bit registers
 
 **MOV**
@@ -36,6 +36,7 @@ mov (r<n>), r<m>    : store register m at address in register n
 mov r<n>, (r<m>)    : store value at address in register m
 mov <addr>, <addr2> : copy word at addr2 to addr
 mov <addr>, #<val>  : copy value to addr
+mov r<n>, a         : register n = a
 ```
 
 Warning : indirect MOV operations rely on Y beeing set to 0, if not then Y will be added to address
@@ -45,12 +46,14 @@ Warning : indirect MOV operations rely on Y beeing set to 0, if not then Y will 
 add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
 add r<n>, a         : add a to register n
 add <addr>, a       : add a to value at address <addr>
-todo : add <addr>, #<imm> and add <addr>, <addr2>
+add <addr>, #<imm>  : add 8bit or 16bit immediate to value at address <addr>
+// todo  add <addr>, <addr2>
 ```
 **INC, DEC**
 ```
 inc r<n> : increment register
 dec r<n> : decrement register
+// todo incw <addr>, inc / inc a
 ```
 **SWAP**
 ```
@@ -62,7 +65,9 @@ stc <address> : store carry as 1 or 0 to address
 ldc <address> : get carry from 1 or 0 at address
 ```
 **JNE / JEQ / JCC / JCS**
-long branches
+```
+long branches, Bill style
+```
 **SWI**
 ```
 swi <bios_function>                    : calls bios function
@@ -100,14 +105,12 @@ Some variables are pre-allocated
     Delete variable #X
 ```
 
-### Directory routines
-
 ### Helper BIOS functions
 
 **is_digit**
-
+```
 C=1 if A is a digit
-
+```
 **set_bit**
 ```
 Y = bit to set in A

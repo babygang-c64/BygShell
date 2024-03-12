@@ -978,15 +978,13 @@ pas_opt_b:
     beq pas_numero
 
 opt_b_numero_ok:
-    inc num_lignes
-    bne pas_inc
-    inc num_lignes+1
-
-pas_inc:
+    incw num_lignes
     ldx #%10011111
-    swi pprint_int, num_lignes
+    mov r0, num_lignes
+    swi pprint_int
     lda #32
     jsr CHROUT
+
 pas_numero:
     rts
 
