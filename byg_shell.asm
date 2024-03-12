@@ -995,10 +995,13 @@ option_start_address:
     lda cmd_cat.options
     and #OPT_A
     beq pas_opt_A
+    ldx #4
+    jsr CHKIN
     jsr CHRIN
     sta zr1l
     jsr CHRIN
     sta zr1h
+
 pas_opt_A:
     rts
 
@@ -1657,7 +1660,8 @@ non_vide:
     // exécute la commande si commande interne
     jmp command_execute
 
-    // commande non trouvée en interne, essaye en externe
+    // commande non trouvée en interne, essaye en externe, d'abord sur
+    // le répertoire en cours
 non_trouve:
 
     ldx #'.'
