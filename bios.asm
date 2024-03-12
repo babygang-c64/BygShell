@@ -4504,6 +4504,10 @@ device:             // current device
     .byte 0
 save_device:
     .byte 0
+device_source:
+    .byte 0
+device_dest:
+    .byte 0
 devices:            // devices présents avec leur type
     .fill 32,0
 nb_devices:         // nb de devices présents

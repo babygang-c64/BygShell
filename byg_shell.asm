@@ -471,6 +471,16 @@ cmd_cp:
     mov r1, #work_path
     swi build_path, work_buffer2
 
+    lda bios.device
+    sta bios.device_source
+    lda work_path+1
+    beq pas_device_source
+    sta bios.device_source
+pas_device_source:
+
+    ldx bios.device_source
+    jsr bios.do_set_device_from_int
+
     // open fichier en entrée #4  
     clc
     ldx #4
@@ -482,6 +492,13 @@ cmd_cp:
     mov r1, #work_path2
     swi build_path, work_buffer2
 
+    lda bios.device
+    sta bios.device_dest
+    lda work_path2+1
+    beq pas_device_dest
+    sta bios.device_dest
+pas_device_dest:
+
     // avec suffixe pour écriture
     mov r0, #work_buffer2
     mov r1, #write_str
@@ -489,6 +506,9 @@ cmd_cp:
 
     // open fichier en sortie #5
     
+    ldx bios.device_dest
+    jsr bios.do_set_device_from_int
+
     sec
     ldx #5
     swi file_open, work_buffer2
@@ -546,6 +566,8 @@ erreur_open_1:
 close1:
     ldx #4
     swi file_close
+    ldx bios.save_device
+    jsr bios.do_set_device_from_int
     sec
     rts
 
