@@ -70,6 +70,7 @@
 .label pprint_int=54
 .label parameters_loop=55
 .label script_read=56
+.label path_get_name=57
 
 bios_jmp:
     .word do_reset
@@ -129,6 +130,7 @@ bios_jmp:
     .word do_print_int
     .word do_parameters_loop
     .word do_script_read
+    .word do_path_get_name
     
 * = * "BIOS code"
 
@@ -3664,6 +3666,25 @@ error:
 
 canal:
     .byte 0
+}
+
+//----------------------------------------------------
+// path_get_name : extraction nom seul du path
+//
+// entrée : R0 = path
+// sortie : R1 = pointeur nom
+//----------------------------------------------------
+
+do_path_get_name:
+{
+    ldy #0
+    add r0, #3
+    mov a, (r0)
+    add r0, a
+    inc r0
+    mov r1, r0
+    clc
+    rts
 }
 
 //----------------------------------------------------

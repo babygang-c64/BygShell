@@ -484,12 +484,21 @@ cmd_cp:
     mov r1, #work_path2
     swi build_path, work_buffer2
     stx bios.device_dest
+    lda work_buffer2+1
+    and #PPATH.WITH_NAME
+    bne avec_nom
+    // ajoute le nom si pas présent en destination
+    swi path_get_name, work_path
+    mov r0,#work_buffer2
+    swi str_cat
 
+avec_nom:
     // avec suffixe pour écriture
     mov r0, #work_buffer2
     mov r1, #write_str
     swi str_cat
 
+dest_ok:
     // open fichier en sortie #5
     
     ldx bios.device_dest
