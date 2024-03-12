@@ -71,6 +71,7 @@
 .label parameters_loop=55
 .label script_read=56
 .label path_get_name=57
+.label parameters_export=58
 
 bios_jmp:
     .word do_reset
@@ -131,6 +132,7 @@ bios_jmp:
     .word do_parameters_loop
     .word do_script_read
     .word do_path_get_name
+    .word do_parameters_export
     
 * = * "BIOS code"
 
@@ -3112,11 +3114,8 @@ pas_rd:
 
     //-- test 1541/1571
 test_cbm15xx:
-    jsr close_cmd
-    jsr open_cmd
-    ldx #<cbminfo
-    ldy #>cbminfo
-    jsr send_cmd
+    mov r0, #cbminfo
+    jsr send_test_next
 
     jsr CHRIN
     cmp #'5'
@@ -3136,11 +3135,8 @@ pas_1541:
     jmp next_drive
 
 test_cbm1581:
-    jsr close_cmd
-    jsr open_cmd
-    ldx #<info1581
-    ldy #>info1581
-    jsr send_cmd
+    mov r0, #info1581
+    jsr send_test_next
 
     jsr CHRIN
     cmp #'5'
@@ -3178,12 +3174,22 @@ fin_lsblk:
     lda affichage_lecteurs
     bne pas_affichage
     jsr affiche_lecteurs
+
 pas_affichage:
     lda nb_devices
     ldx first_device
     clc
     rts
 
+send_test_next:
+    jsr close_cmd
+    jsr open_cmd
+    ldx zr0l
+    ldy zr0h
+    jmp send_cmd
+
+
+    // affichage des types de lecteurs identifiés
 affiche_lecteurs:
     lda #0
     sta cur_device
@@ -3193,14 +3199,13 @@ aff_suivant:
     lda devices,y
     beq pas_present
 
+    // affiche numero:type
+    pha
     tya
     jsr aff_numero_drive
     lda #':'
     jsr CHROUT
-
-    //-- type lecteur
-    ldy cur_device
-    lda devices,y
+    pla
     jsr affiche_type
 
 pas_present:
@@ -3211,34 +3216,18 @@ pas_present:
 
 fin_aff_total:
     lda #13
-    jsr CHROUT
-    rts
+    jmp CHROUT
 
 affiche_type:
     cmp #1
     bne aff_pas_autre
-    lda #'O'
-    jsr CHROUT
-    lda #'T'
-    jsr CHROUT
-    lda #'H'
-    jsr CHROUT
-    lda #'R'
-    jsr CHROUT
+    swi pprint, msg_type_other
     jmp fin_aff_type
 
 aff_pas_autre:
     cmp #$80
     bne aff_pas_ram
-
-    lda #'R'
-    jsr CHROUT
-    lda #'A'
-    jsr CHROUT
-    lda #'M'
-    jsr CHROUT
-    lda #'L'
-    jsr CHROUT
+    swi pprint, msg_type_ramlink
     jmp fin_aff_type
 
 aff_pas_ram:
@@ -3274,12 +3263,10 @@ aff_fin_hd:
     jmp fin_aff_type
 
 aff_15xx:
-    tax
-    lda #'1'
-    jsr CHROUT
-    lda #'5'
-    jsr CHROUT
-    txa
+    pha
+    mov r0, #msg_type_15
+    swi pprint
+    pla
     cmp #41
     bne aff_pas41
     lda #'4'
@@ -3298,8 +3285,7 @@ fin_aff_15xx:
 
 fin_aff_type:
     lda #32
-    jsr CHROUT
-    rts
+    jmp CHROUT
 
     //-- ouverture pour envoi commande
 open_cmd:
@@ -3349,6 +3335,13 @@ cbminfo: // 1541, 1571, info at $e5c5
 info1581: // 1581, info at $a6e8
     .text "M-R"
     .byte $e8,$a6,$02,$0d
+
+msg_type_other:
+    pstring("OTHR")
+msg_type_ramlink:
+    pstring("RAML")
+msg_type_15:
+    pstring("15")
 }
 
 //----------------------------------------------------
@@ -3934,6 +3927,59 @@ key_ok:
     rts
 }
 
+//====================================================
+// Parameters routines
+//
+// export : copy parameters to vars
+// loop : process parameters
+//====================================================
+
+//----------------------------------------------------
+// parameters_export : copy parameters to vars
+//
+// r0 = parameters list
+// output : variables 0 to 9 max  
+//----------------------------------------------------
+
+do_parameters_export:
+{
+    swi list_size
+    sta nb_params
+    sty pos_param
+
+boucle_export:
+    ldx pos_param
+    txa
+    clc
+    adc #'0'
+    sta var_param+1
+    push r0
+    swi list_get
+    mov r1, r0
+    pop r0
+    push r0
+    swi var_set, var_param
+    pop r0
+    inc pos_param
+    lda pos_param
+    cmp #10
+    beq fin_params
+    cmp nb_params
+    beq fin_params
+    bne boucle_export
+
+fin_params:
+    clc
+    rts
+
+pos_param:
+    .byte 0
+nb_params:
+    .byte 0
+var_param:
+    pstring("0")
+}
+
 //----------------------------------------------------
 // parameters_loop : execute tant qu'il y a des 
 // paramètres dans la liste
@@ -4171,7 +4217,7 @@ next_line:
     mov a, (r0)
     cmp #'#'
     beq next_line
-    swi pprintnl, input_buffer
+    //swi pprintnl, input_buffer
 
     jsr CLRCHN
     jsr shell.command_process

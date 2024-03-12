@@ -455,6 +455,7 @@ cmd_cp:
     needs_parameters(2)
     lda bios.device
     sta bios.save_device
+    swi list_size, parameters.list
 
     ldx #1
     swi list_get, parameters.list
@@ -1683,6 +1684,9 @@ command_execute:
 
 script_execute:
 {
+    push r0
+    swi parameters_export, parameters.list
+    pop r0
     swi script_read
     clc
     rts
