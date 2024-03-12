@@ -121,8 +121,9 @@ Y = bit to set in A
 ## System
 
 **reset**
+```
     Restart the shell, cold start
-
+```
 **file_load**
 ```
     Load a binary file for running, checks the presence of a BASIC stubs with a SYS instruction and starts code at $080D (2061)
@@ -150,7 +151,18 @@ Y = bit to set in A
         bit 7 = pad with spaces (default is '0')
 ```
 **input**
+```
+    Accept input from the user, return results in input_buffer,
+    On exit : R0 = input_buffer
 
+    Typing is in insert mode
+    Up and Down = history browsing
+    Ctrl+K      = delete to end of line
+    Ctrl+O or E = go to end of line
+    Ctrl+U or A = go to start of line
+    Run/stop    = break input, start new input
+    Backspace / Insert works as usual
+```
 **pprinthex**
 
 **pprinthex8**
@@ -228,7 +240,25 @@ Y = bit to set in A
 **set_device**
 
 **prep_path**
+```
+    Builds a ppath object from a pstring
+    R0 = pstring input
+    R1 = ppath output
 
+    Path format :
+    [device[,partition]]:][path/][file]
+
+    ppath object format :
+        Type : bitmat for presence of path components
+            WITH_DEVICE=1
+            WITH_PARTITION=2
+            WITH_PATH=4
+            WITH_NAME=8
+        Device #
+        Partition #
+        path pstring
+        name pstring
+```
 **build_path**
 ```
     Build a path pString from a ppath
@@ -236,9 +266,27 @@ Y = bit to set in A
     R0 = address of target pString
     C=0 adds : to filename, C=1 : no separator added
     On exit: r0 contains path:name
+    on exit : X = 1st available device, A = number of devices
+              R0 = devices table
+    Device table is a 32 bytes of device types, 1 position for each
+    device number and 1 byte to indicate presence / type of device
+    Device types :
+        00 - No serial device available
+        01 - foreign drive (MSD, Excelerator, Lt.Kernal, etc.)
+        41 - 1541 drive
+        71 - 1571 drive
+        81 - 1581 drive
+        e0 - FD drive
+        c0 - HD drive
+        f0 - RD drive
+        80 - RAMLink
+        si %11xxxxxx : other with CMD capabilities
 ```
 **lsblk**
-
+```
+    Probes and populates attached disk devices into the devices table
+    C=1 for silent mode
+```
 **get_device_status**
 ```
     Get current device status
@@ -247,7 +295,12 @@ Y = bit to set in A
     C=0 if code 00, C=1 otherwise
 ```
 **set_device_from_path**
-
+```
+    Changes the current device according to device in ppath object
+    R0 = ppath object
+    if the device change fails, falls back to previous current device
+    value
+```
 ## pStrings
 
 **str_cat**
@@ -274,6 +327,8 @@ Y = bit to set in A
         %R<n> = hex value of register R<n>
         %P<n> = pstring value at address of register R<n>
         %V<variable>% = pstring value stored for system variable with name <variable>
+                        when a script is called, variables 0 up to 9 are populated with
+                        script name and parameters
         %C<hexcolor> = insert character to change color to <hexcolor> (hex nibble)
                        R = reverse, N = normal, H = clear screen / home
         %H<hex> = insert character <hex>
@@ -367,6 +422,8 @@ Y = bit to set in A
 ```
 **buffer_write**
 ```
+    X = channel to write to, R0 = pstring buffer to write to channel
+    (no error check for the time beeing on the write action)
 ```
 
 ## Directory
@@ -472,11 +529,23 @@ Warm reset to BASIC startup.
 Restart shell with reset, sys 64738 or run / stop + restore
 ```
 **SET**
-
+```
+    SET ["/']<variable>=<value>['/"]
+    Set variable value, create new variable if variable does not exist
+    Values are expanded by default
+    Quotes allow the use of spaces in <value>
+    Single quotes disallow parameters expansion
+```
 **ECHO**
-
+```
+    Prints to screen the parameters after expansion
+    All parameters are printed, separated with a single space
+    Single quotes disallow parameters expansion
+```
 **ENV**
-
+```
+    Lists existing variables and values to screen
+```
 **LS**
 ```
 LS [-options] [<pattern>]

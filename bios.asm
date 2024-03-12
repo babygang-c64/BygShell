@@ -3190,6 +3190,7 @@ fin_lsblk:
 pas_affichage:
     lda nb_devices
     ldx first_device
+    mov r0, #devices
     clc
     rts
 
