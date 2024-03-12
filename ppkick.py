@@ -93,6 +93,9 @@ for line in hin:
             if ptype0 == 'si':
                 newline += '_r'
             newline += '(' + pval0 + ')'
+        elif ptype1 == 'a' and ptype0 == 'r':
+            # mov r0, a
+            newline = 'sta_r(' + pval0 + ')'
         else:
             # mov r<num>, a -> 
             newline = 'st_' + ptype0 + ptype1 + '(' + pval0 + ', ' + pval1 + ')'

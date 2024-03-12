@@ -191,7 +191,12 @@ Y = bit to set in A
 ## Lists
 
 **list_add**
-
+```
+    Add pstring to list
+    R0 = list object
+    R1 = pstring to add to list
+    On exit : A = new item number
+```
 **list_get**
 ```
     Returns the Xths value in the list
@@ -470,7 +475,17 @@ Restart shell with reset, sys 64738 or run / stop + restore
 **ENV**
 
 **LS**
+```
+LS [-options] [<pattern>]
 
+List directory
+LL command runs LS with L option selected
+
+    options :
+    L = detailled version
+    P = paginate results
+    D = list directories only
+```
 **ST**
 ```
 Print status of current disk device
@@ -485,11 +500,14 @@ To rescan devices use LSBLK
 **HELP**
 
 **LSD**
-
-**KEYTEST**
-
+```
+probes and lists disk devices
+```
 **CD**
-
+```
+Changes directory
+.. can be used for parent directory
+```
 **CMD**
 
 **CAT**
@@ -534,7 +552,14 @@ Clear screen
 **SAVEENV**
 
 **INPUT**
+```
+INPUT [<invite text>] [<variable name>] [-options]
 
+Read user input and store it into a variable
+    Options :
+    K : wait for a single key press and not an input (supersedes variable storage)
+    P : to be used with K, prints the hex code of the key
+```
 **FILTER**
 
 **HISTORY**
