@@ -167,7 +167,11 @@ Y = bit to set in A
 
 **pprinthex8**
 
-**print_path**
+**pprint_path**
+```
+    Prints the elements of a ppath object
+    R0 = ppath element
+```
 
 
 ## Conversions

@@ -47,7 +47,7 @@
 .label buffer_write=31
 .label str_expand=32
 .label str_pat=33
-.label print_path=34
+.label pprint_path=34
 .label str_cmp=35
 .label str_chr=36
 .label str_lstrip=37
@@ -108,7 +108,7 @@ bios_jmp:
     .word do_buffer_write
     .word do_str_expand
     .word do_str_pat
-    .word do_print_path
+    .word do_pprint_path
     .word do_str_cmp
     .word do_str_chr
     .word do_str_lstrip
@@ -1542,247 +1542,35 @@ nb_copie:
 }
 
 //---------------------------------------------------------------
-// str_expand : expanse une pstring
-// entrée : R0, sortie : R1
-//
-// séquences expansées :
-//
-// %V<variable>% = valeur variable
-// %P<reg> = pstring à l'adresse du registre <reg>
-// %R<reg> = valeur hexa du registre <reg>
-// %% = %
-// %C<nibble> = couleur <nibble> ou caractère de contrôle :
-//              R = reverse, N = normal
-// %H<hex> = caractère code <hex>
+// pprint_path : affiche les éléments d'un objet ppath, pour
+// debug
+// r0 = objet ppath
+// rappel ppath : type, device, partition, path, nom
 //---------------------------------------------------------------
 
-do_str_expand:
+do_pprint_path:
 {
-    ldy #0
-    tya
-    sta (zr1),y
-    lda (zr0),y
-    bne pas_vide
-    clc
-    rts
-
-pas_vide:
-    push r1
-    lda #0
-    setbyte_r(1)
-    getbyte_r(0)
-    sta lgr_input
-    sty lgr_output
-process:
-    getbyte_r(0)
-    cmp #'%'
-    beq special
-
-    // traitement caractère normal, ajout dans la chaine en
-    // sortie dans R1
-process_normal:
-    setbyte_r(1)
-    inc lgr_output
-    dec lgr_input
-
-process_suite:
-    lda lgr_input
-    bne process
-
-fin_process:
-    pop r1
-    lda lgr_output
-    ldy #0
-    sta (zr1),y
-    clc
-    rts
-
-    // caractères spéciaux
-special:
-    jsr consomme_car
-
-    getbyte_r(0)
-    cmp #'%'
-    jeq process_normal
-
-    cmp #'R'
-    bne pas_registre
-
-    // registre : récupère la valeur d'un registre
-    jsr consomme_car
-    dec lgr_input
-    getbyte_r(0)
-    and #$0f
-    asl
-    tay
-
     push r0
-    lda zr0l,y
-    sta zr0l
-    lda zr0h,y
-    sta zr0h
-    ldy #0
-
-    lda zr0h
-    jsr a2hex
-    lda hexl
-    setbyte_r(1)
-    lda hexh
-    setbyte_r(1)
-    lda zr0l
-    jsr a2hex
-    lda hexl
-    setbyte_r(1)
-    lda hexh
-    setbyte_r(1)
-
-    clc
-    lda lgr_output
-    adc #4
-    sta lgr_output
-
-    pop r0
-    jmp process_suite
-
-pas_registre:
-    cmp #'V'
-    jne pas_variable
-    jsr consomme_car
-
-    // V = variable : récupère la valeur d'une variable
-
-    push r1
-    mov r1, #work_name
-    lda #0
-    setbyte_r(1)
-
-copie_nom_var:
+    // type et dev
     getbyte_r(0)
-    
-    cmp #'%'
-    beq fin_copie_nom
-    setbyte_r(1)
-    inc work_name
-    jsr consomme_car
-    jmp copie_nom_var
-
-fin_copie_nom:
-    dec lgr_input
-
-    // nom variable dans work_name, suite dans r0
-    // recherche contenu variable -> r1 -> r2 et copie
-    // la valeur
-
-    push r0
-    swi var_get, work_name
-    mov r2, r1
-    pop r0
-    pop r1
-
-do_copy_var:
-    ldy #0
-    getbyte_r(2)
-    sta lgr_copie
-    cmp #0
-    beq pas_copie_var
-copie_var:
-    getbyte_r(2)
-    setbyte_r(1)
-    inc lgr_output
-    dec lgr_copie
-    bne copie_var
-
-pas_copie_var:
-    jmp process_suite
-
-pas_variable:
-    cmp #'P'
-    bne pas_pstring
-    jsr consomme_car
-
-    // P = pstring, copie la pstring à l'adresse du registre fourni
-
+    sta zr4h
     getbyte_r(0)
-    dec lgr_input
-    and #15
-    asl
-    tay
+    sta zr4l
+    // ignore partition
+    getbyte_r(0)
+    // path
+    mov r5, r0
+    getbyte_r(0)
+    add r0, a
+    // name
+    mov r6, r0
 
-    lda zr0l,y
-    sta zr2l
-    lda zr0h,y
-    sta zr2h
-
-    jmp do_copy_var
-
-    // C = couleur, insère le caractère de changement de couleur
-    // fonction du nibble hexa qui suit ou N / R
-
-pas_pstring:
-    cmp #'C'
-    bne pas_couleur
-    jsr consomme_car
-
-    mov a, (r0++)
-    sta ztmp
-
-    ldy #0
-    ldx #0
-lookup_code:
-    lda corresp_code, x
-    beq code_hs
-    cmp ztmp
-    beq code_trouve
-    inx
-    bne lookup_code
-code_hs:
-    lda #'?'
-    jmp process_normal
-code_trouve:
-    lda code_couleur,x
-    jmp process_normal
-
-    // H = caractère valeur <hex> qui suit (2 octets)
-pas_couleur:
-    cmp #'H'
-    bne pas_hex
-
-    jsr consomme_car
-    jsr consomme_car
-    jsr do_hex2int.conv_hex_byte
-    ldy #0
-    jmp process_normal
-
-pas_hex:
-    clc
+    swi pprintnl, msg_path
+    pop r0
     rts
 
-consomme_car:
-    dec lgr_input
-    beq fin_erreur
-    rts
-fin_erreur:
-    inc $d020
-    jmp fin_erreur
-    pla
-    pla
-    sec
-    rts
-
-corresp_code:
-    .text "0123456789ABCDEFRNH"
-    .byte 0
-code_couleur:
-    .byte 90,5,28,159,156,30,31,158
-    .byte 150,149,129,151,152,153,154,155
-    .byte 18,146,147
-
-lgr_copie:
-    .byte 0
-lgr_input:
-    .byte 0
-lgr_output:
-    .byte 0
+msg_path:
+    pstring("TYPE/DEVICE (%R4) PATH (%P5) NAME (%P6)")
 }
 
 //---------------------------------------------------------------
@@ -2193,6 +1981,20 @@ num_var:
 nb_var_work:
     .byte 0
 
+//===============================================================
+// pstring routines
+//
+// str_cmp
+// str_cpy
+// str_ins
+// str_del
+// str_chr
+// str_rchr
+// str_ncpy
+// str_pat
+// str_expand
+//===============================================================
+
 //---------------------------------------------------------------
 // str_cmp : compare 2 pstrings, r0 vs r1, C=1 si OK
 //---------------------------------------------------------------
@@ -2360,37 +2162,6 @@ pos_ecriture:
 }
 
 //---------------------------------------------------------------
-// print_path : affiche les éléments d'un objet ppath, pour
-// debug
-// r0 = objet ppath
-// rappel ppath : type, device, partition, path, nom
-//---------------------------------------------------------------
-
-do_print_path:
-{
-    push r0
-    // type et dev
-    getbyte_r(0)
-    sta zr4h
-    getbyte_r(0)
-    sta zr4l
-    // ignore partition
-    getbyte_r(0)
-    // path
-    mov r5, r0
-    getbyte_r(0)
-    add r0, a
-    // name
-    mov r6, r0
-
-    swi pprintnl, msg_path
-    pop r0
-    rts
-msg_path:
-    pstring("TYPE/DEVICE (%R4) PATH (%P5) NAME (%P6)")
-}
-
-//---------------------------------------------------------------
 // str_chr : recherche X dans pstring R0, C=1 si trouvé et
 // Y = position
 //---------------------------------------------------------------
@@ -2504,6 +2275,434 @@ copie_nom:
 lgr_copie:
     .byte 0
 }
+
+//---------------------------------------------------------------
+// str_pat : pattern matching, C=1 si OK, C=0 sinon
+// r0 : chaine à tester
+// r1 : pattern
+//---------------------------------------------------------------
+
+do_str_pat:
+{
+    .label zstring = zr0
+    .label zwild = zr1
+
+    ldy #0
+    lax (zstring),y
+    inx
+    stx lgr_string
+    lax (zwild),y
+    inx
+    stx lgr_wild
+    iny
+    sty pos_wild
+    sty pos_string
+    sty pos_cp
+    sty pos_mp
+
+while1:
+    lda pos_string
+    cmp lgr_string
+    beq end_while1
+
+    ldy pos_wild
+    lda (zwild),y
+    cmp #'*'
+    beq end_while1
+
+    ldy pos_wild
+    lda (zwild),y
+    ldy pos_string
+    cmp (zstring),y
+    beq suite_while1
+    cmp #'?'
+    beq suite_while1
+    clc
+    rts
+
+suite_while1:
+    inc pos_wild
+    inc pos_string
+    jmp while1
+
+end_while1:
+
+while2:
+    lda pos_string
+    cmp lgr_string
+    beq end_while2
+
+    ldy pos_wild
+    //cmp lgr_wild
+    //beq pas_etoile
+    lda (zwild),y
+    cmp #'*'
+    bne pas_etoile
+
+    inc pos_wild
+    lda pos_wild
+    cmp lgr_wild
+    bne suite
+    sec
+    rts
+suite:
+    lda pos_wild
+    sta pos_mp
+    ldy pos_string
+    iny
+    sty pos_cp
+    jmp while2
+
+pas_etoile:
+    ldy pos_wild
+    //cpy lgr_wild
+    //beq end_while2
+
+    lda (zwild),y
+    cmp #'?'
+    beq ok_comp
+    ldy pos_string
+    cpy lgr_string
+    beq end_while2
+    cmp (zstring),y
+    beq ok_comp
+    
+not_ok_comp:
+    lda pos_mp
+    sta pos_wild
+    inc pos_cp
+    lda pos_cp
+    sta pos_string
+    jmp while2
+
+ok_comp:
+    inc pos_wild
+    inc pos_string
+    lda pos_wild
+    cmp lgr_wild
+    beq ok_wild
+    bcs ko_inc
+ok_wild:
+    lda pos_string
+    cmp lgr_string
+    beq ok_string
+    bcs ko_inc
+ok_string:
+    jmp while2
+ko_inc:
+    sec
+    rts
+end_while2:
+
+while3:
+    ldy pos_wild
+    cpy lgr_wild
+    beq fini_wild
+    lda (zwild),y
+    cmp #'*'
+    bne end_while3
+    inc pos_wild
+    jmp while3
+
+end_while3:
+    lda pos_wild
+    cmp lgr_wild
+    beq fini_wild
+    clc
+    rts
+fini_wild:
+    sec
+    rts
+
+debug_values:
+    lda #'S'
+    jsr CHROUT
+    lda pos_string
+    ora #'0'
+    jsr CHROUT
+    lda #'W'
+    jsr CHROUT
+    lda pos_wild
+    ora #'0'
+    jsr CHROUT
+    lda #'C'
+    jsr CHROUT
+    lda pos_cp
+    ora #'0'
+    jsr CHROUT
+    lda #'M'
+    jsr CHROUT
+    lda pos_mp
+    ora #'0'
+    jsr CHROUT
+
+    lda #13
+    jmp CHROUT
+
+lgr_string:
+    .byte 0
+lgr_wild:
+    .byte 0
+pos_wild:
+    .byte 0
+pos_string:
+    .byte 0
+pos_cp:
+    .byte 0
+pos_mp:
+    .byte 0
+}
+
+//---------------------------------------------------------------
+// str_expand : expanse une pstring
+// entrée : R0, sortie : R1
+//
+// séquences expansées :
+//
+// %V<variable>% = valeur variable
+// %P<reg> = pstring à l'adresse du registre <reg>
+// %R<reg> = valeur hexa du registre <reg>
+// %% = %
+// %C<nibble> = couleur <nibble> ou caractère de contrôle :
+//              R = reverse, N = normal
+// %H<hex> = caractère code <hex>
+//---------------------------------------------------------------
+
+do_str_expand:
+{
+    ldy #0
+    tya
+    sta (zr1),y
+    lda (zr0),y
+    bne pas_vide
+    clc
+    rts
+
+pas_vide:
+    push r1
+    lda #0
+    setbyte_r(1)
+    getbyte_r(0)
+    sta lgr_input
+    sty lgr_output
+process:
+    getbyte_r(0)
+    cmp #'%'
+    beq special
+
+    // traitement caractère normal, ajout dans la chaine en
+    // sortie dans R1
+process_normal:
+    setbyte_r(1)
+    inc lgr_output
+    dec lgr_input
+
+process_suite:
+    lda lgr_input
+    bne process
+
+fin_process:
+    pop r1
+    lda lgr_output
+    ldy #0
+    sta (zr1),y
+    clc
+    rts
+
+    // caractères spéciaux
+special:
+    jsr consomme_car
+
+    getbyte_r(0)
+    cmp #'%'
+    jeq process_normal
+
+    cmp #'R'
+    bne pas_registre
+
+    // registre : récupère la valeur d'un registre
+    jsr consomme_car
+    dec lgr_input
+    getbyte_r(0)
+    and #$0f
+    asl
+    tay
+
+    push r0
+    lda zr0l,y
+    sta zr0l
+    lda zr0h,y
+    sta zr0h
+    ldy #0
+
+    lda zr0h
+    jsr a2hex
+    lda hexl
+    setbyte_r(1)
+    lda hexh
+    setbyte_r(1)
+    lda zr0l
+    jsr a2hex
+    lda hexl
+    setbyte_r(1)
+    lda hexh
+    setbyte_r(1)
+
+    clc
+    lda lgr_output
+    adc #4
+    sta lgr_output
+
+    pop r0
+    jmp process_suite
+
+pas_registre:
+    cmp #'V'
+    jne pas_variable
+    jsr consomme_car
+
+    // V = variable : récupère la valeur d'une variable
+
+    push r1
+    mov r1, #work_name
+    lda #0
+    setbyte_r(1)
+
+copie_nom_var:
+    getbyte_r(0)
+    
+    cmp #'%'
+    beq fin_copie_nom
+    setbyte_r(1)
+    inc work_name
+    jsr consomme_car
+    jmp copie_nom_var
+
+fin_copie_nom:
+    dec lgr_input
+
+    // nom variable dans work_name, suite dans r0
+    // recherche contenu variable -> r1 -> r2 et copie
+    // la valeur
+
+    push r0
+    swi var_get, work_name
+    mov r2, r1
+    pop r0
+    pop r1
+
+do_copy_var:
+    ldy #0
+    getbyte_r(2)
+    sta lgr_copie
+    cmp #0
+    beq pas_copie_var
+copie_var:
+    getbyte_r(2)
+    setbyte_r(1)
+    inc lgr_output
+    dec lgr_copie
+    bne copie_var
+
+pas_copie_var:
+    jmp process_suite
+
+pas_variable:
+    cmp #'P'
+    bne pas_pstring
+    jsr consomme_car
+
+    // P = pstring, copie la pstring à l'adresse du registre fourni
+
+    getbyte_r(0)
+    dec lgr_input
+    and #15
+    asl
+    tay
+
+    lda zr0l,y
+    sta zr2l
+    lda zr0h,y
+    sta zr2h
+
+    jmp do_copy_var
+
+    // C = couleur, insère le caractère de changement de couleur
+    // fonction du nibble hexa qui suit ou N / R
+
+pas_pstring:
+    cmp #'C'
+    bne pas_couleur
+    jsr consomme_car
+
+    mov a, (r0++)
+    sta ztmp
+
+    ldy #0
+    ldx #0
+lookup_code:
+    lda corresp_code, x
+    beq code_hs
+    cmp ztmp
+    beq code_trouve
+    inx
+    bne lookup_code
+code_hs:
+    lda #'?'
+    jmp process_normal
+code_trouve:
+    lda code_couleur,x
+    jmp process_normal
+
+    // H = caractère valeur <hex> qui suit (2 octets)
+pas_couleur:
+    cmp #'H'
+    bne pas_hex
+
+    jsr consomme_car
+    jsr consomme_car
+    jsr do_hex2int.conv_hex_byte
+    ldy #0
+    jmp process_normal
+
+pas_hex:
+    clc
+    rts
+
+consomme_car:
+    dec lgr_input
+    beq fin_erreur
+    rts
+fin_erreur:
+    inc $d020
+    jmp fin_erreur
+    pla
+    pla
+    sec
+    rts
+
+corresp_code:
+    .text "0123456789ABCDEFRNH"
+    .byte 0
+code_couleur:
+    .byte 90,5,28,159,156,30,31,158
+    .byte 150,149,129,151,152,153,154,155
+    .byte 18,146,147
+
+lgr_copie:
+    .byte 0
+lgr_input:
+    .byte 0
+lgr_output:
+    .byte 0
+}
+
+//===============================================================
+// PPATH routines
+//
+// prep_path
+// build_path
+//===============================================================
 
 //---------------------------------------------------------------
 // prep_path : prépare un objet path
@@ -2795,182 +2994,6 @@ type:
     .byte 0
 }
 
-//---------------------------------------------------------------
-// str_pat : pattern matching, C=1 si OK, C=0 sinon
-// r0 : chaine à tester
-// r1 : pattern
-//---------------------------------------------------------------
-
-do_str_pat:
-{
-    .label zstring = zr0
-    .label zwild = zr1
-
-    ldy #0
-    lax (zstring),y
-    inx
-    stx lgr_string
-    lax (zwild),y
-    inx
-    stx lgr_wild
-    iny
-    sty pos_wild
-    sty pos_string
-    sty pos_cp
-    sty pos_mp
-
-while1:
-    lda pos_string
-    cmp lgr_string
-    beq end_while1
-
-    ldy pos_wild
-    lda (zwild),y
-    cmp #'*'
-    beq end_while1
-
-    ldy pos_wild
-    lda (zwild),y
-    ldy pos_string
-    cmp (zstring),y
-    beq suite_while1
-    cmp #'?'
-    beq suite_while1
-    clc
-    rts
-
-suite_while1:
-    inc pos_wild
-    inc pos_string
-    jmp while1
-
-end_while1:
-
-while2:
-    lda pos_string
-    cmp lgr_string
-    beq end_while2
-
-    ldy pos_wild
-    //cmp lgr_wild
-    //beq pas_etoile
-    lda (zwild),y
-    cmp #'*'
-    bne pas_etoile
-
-    inc pos_wild
-    lda pos_wild
-    cmp lgr_wild
-    bne suite
-    sec
-    rts
-suite:
-    lda pos_wild
-    sta pos_mp
-    ldy pos_string
-    iny
-    sty pos_cp
-    jmp while2
-
-pas_etoile:
-    ldy pos_wild
-    //cpy lgr_wild
-    //beq end_while2
-
-    lda (zwild),y
-    cmp #'?'
-    beq ok_comp
-    ldy pos_string
-    cpy lgr_string
-    beq end_while2
-    cmp (zstring),y
-    beq ok_comp
-    
-not_ok_comp:
-    lda pos_mp
-    sta pos_wild
-    inc pos_cp
-    lda pos_cp
-    sta pos_string
-    jmp while2
-
-ok_comp:
-    inc pos_wild
-    inc pos_string
-    lda pos_wild
-    cmp lgr_wild
-    beq ok_wild
-    bcs ko_inc
-ok_wild:
-    lda pos_string
-    cmp lgr_string
-    beq ok_string
-    bcs ko_inc
-ok_string:
-    jmp while2
-ko_inc:
-    sec
-    rts
-end_while2:
-
-while3:
-    ldy pos_wild
-    cpy lgr_wild
-    beq fini_wild
-    lda (zwild),y
-    cmp #'*'
-    bne end_while3
-    inc pos_wild
-    jmp while3
-
-end_while3:
-    lda pos_wild
-    cmp lgr_wild
-    beq fini_wild
-    clc
-    rts
-fini_wild:
-    sec
-    rts
-
-debug_values:
-    lda #'S'
-    jsr CHROUT
-    lda pos_string
-    ora #'0'
-    jsr CHROUT
-    lda #'W'
-    jsr CHROUT
-    lda pos_wild
-    ora #'0'
-    jsr CHROUT
-    lda #'C'
-    jsr CHROUT
-    lda pos_cp
-    ora #'0'
-    jsr CHROUT
-    lda #'M'
-    jsr CHROUT
-    lda pos_mp
-    ora #'0'
-    jsr CHROUT
-
-    lda #13
-    jmp CHROUT
-
-lgr_string:
-    .byte 0
-lgr_wild:
-    .byte 0
-pos_wild:
-    .byte 0
-pos_string:
-    .byte 0
-pos_cp:
-    .byte 0
-pos_mp:
-    .byte 0
-}
 
 //===============================================================
 // Helper functions
