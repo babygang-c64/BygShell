@@ -82,6 +82,10 @@ work_path:
     ppath(128)
 work_path2:
     ppath(128)
+work_filename:
+    .fill $80,0
+work_filename2:
+    .fill $80,0
 
 work_name:
     .fill $40,0
@@ -455,6 +459,9 @@ cmd_cp:
     needs_parameters(2)
     lda bios.device
     sta bios.save_device
+    mov r1, #options_cp
+    jsr check_options
+    sta options
 
     // destination = dernier paramètre
     swi list_size, parameters.list
@@ -468,6 +475,11 @@ cmd_cp:
     clc
     rts
 
+.label OPT_M=1
+options:
+    .byte 0
+options_cp:
+    pstring("M")
 write_str:
     pstring(",P,W")
 }
@@ -481,14 +493,14 @@ do_cp:
     // path source sans séparateur path<:>nom
     sec
     mov r1, #work_path
-    swi build_path, work_buffer2
+    swi build_path, work_filename
     stx bios.device_source
     jsr bios.do_set_device_from_int
 
     // open fichier en entrée #4  
     clc
     ldx #4
-    swi file_open, work_buffer2
+    swi file_open, work_filename
     jcs erreur_open_1
 
     // path destination sans séparateur path<:>nom
@@ -545,20 +557,17 @@ copie_fichier:
     jmp copie_fichier
 
 fin_copie:
+    // option M = MV ?
+    lda cmd_cp.options
+    and #cmd_cp.OPT_M
+    beq pas_opt_m
+    jsr delete_source
+
+pas_opt_m:
     jsr close_files
     ldx bios.save_device
     jsr bios.do_set_device_from_int
     clc
-    rts
-
-lecture_finie:
-    .byte 0
-
-close_files:
-    ldx #4
-    swi file_close
-    ldx #5
-    swi file_close
     rts
 
 erreur_open_2:
@@ -577,6 +586,29 @@ close1:
     jsr bios.do_set_device_from_int
     sec
     rts
+
+delete_source:
+    ldx bios.device_source
+    jsr bios.do_set_device_from_int
+    ldx #1
+    swi str_ins, work_filename, cmd_delete
+    swi pprintnl, work_filename
+    clc
+    rts
+
+cmd_delete:
+    pstring("S:")
+
+lecture_finie:
+    .byte 0
+
+close_files:
+    ldx #4
+    swi file_close
+    ldx #5
+    swi file_close
+    rts
+
 }
 
 //----------------------------------------------------
