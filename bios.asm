@@ -3660,7 +3660,7 @@ not_directory:
     jsr OPEN    
     bcs error
 
-    //sec // tmp
+    clc // tmp
     swi get_device_status
     bcs error
     clc

@@ -446,6 +446,8 @@ close_file:
     rts
 
 error:
+    sec
+    swi get_device_status
     jsr close_file
     sec
     rts
@@ -457,6 +459,11 @@ error:
 // objectifs : 
 // copie fichier 1 pour 1
 // copier les n-1 fichiers vers n si n est un path
+//
+// options :
+//  M = move
+//  C = compatible (pas de commande locale)
+// (F = Force)
 //----------------------------------------------------
 
 cmd_cp:
@@ -481,10 +488,11 @@ cmd_cp:
     rts
 
 .label OPT_M=1
+.label OPT_C=2
 options:
     .byte 0
 options_cp:
-    pstring("M")
+    pstring("MC")
 write_str:
     pstring(",P,W")
 }
@@ -502,7 +510,40 @@ do_cp:
     stx bios.device_source
     jsr bios.do_set_device_from_int
 
-    // open fichier en entrée #4  
+    // même disque = tests pour utilisation commandes CBM DOS
+    // sauf si option C
+
+    lda cmd_cp.options
+    and #cmd_cp.OPT_C
+    bne process_cp
+
+    // tests device + partition
+    lda work_path+1
+    cmp work_path2+1
+    bne process_cp
+    lda work_path+2
+    cmp work_path2+2
+    bne process_cp
+    // si pas de path
+    lda work_path
+    and #PPATH.WITH_PATH
+    bne process_cp
+    lda work_path2
+    and #PPATH.WITH_PATH
+    bne process_cp
+
+    // ici : même device / partition / pas de path
+    lda cmd_cp.options
+    and #cmd_cp.OPT_M
+    beq pas_move
+
+    jmp move_direct
+
+pas_move:
+    jmp copy_direct
+
+process_cp:
+    // open fichier en entrée #4
     clc
     ldx #4
     swi file_open, work_filename
@@ -537,7 +578,6 @@ dest_ok:
     ldx #5
     swi file_open, work_buffer2
     bcs erreur_open_2
-
 
 copie_fichier:
     lda #'R'
@@ -600,8 +640,29 @@ delete_source:
     mov r1, r0
     jmp do_cmd_send
 
+move_direct:
+    swi str_cpy, cmd_rename, work_buffer
+move_direct_names:
+    swi path_get_name, work_path2
+    swi str_cat, work_buffer
+    swi str_cat, work_buffer, cmd_egal
+    swi path_get_name, work_path
+    swi str_cat, work_buffer
+    mov r1, r0
+    jmp do_cmd_send
+
+copy_direct:
+    swi str_cpy, cmd_copy, work_buffer
+    jmp move_direct_names
+
 cmd_delete:
     pstring("S:")
+cmd_rename:
+    pstring("R:")
+cmd_copy:
+    pstring("C:")
+cmd_egal:
+    pstring("=")
 
 lecture_finie:
     .byte 0
