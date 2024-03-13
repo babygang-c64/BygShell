@@ -128,7 +128,7 @@ bios_jmp:
     .word do_key_wait
     .word do_directory_get_entries
     .word do_wait
-    .word do_print_int
+    .word do_pprint_int
     .word do_parameters_loop
     .word do_script_read
     .word do_path_get_name
@@ -1498,6 +1498,96 @@ nb_copie:
 .print "pos_history=$"+toHexString(pos_history)
 }
 
+//===============================================================
+// pprint routines : print functions for pstrings and other
+//
+// pprint_int
+// pprint_path
+// pprint
+// pprintnl
+// pprint_hex
+//===============================================================
+
+//---------------------------------------------------------------
+// pprint_int : affichage entier
+// entier dans r0
+// X = format, %PL123456
+// bit 7 = padding avec espace (avec 0 sinon)
+// bit 6 = suppression espaces en tête
+//---------------------------------------------------------------
+
+do_pprint_int:
+{
+    stx format
+    txa
+    and #%10000000
+    sta padding_space
+    lda format
+    and #%01000000
+    sta write_space
+    lda #%00100000
+    sta test_format
+    lda #1
+    sta do_padding
+    txa
+    pha
+    mov r1, #int_conv
+    jsr bios.do_int2str
+
+    ldx #0
+suite_affiche:
+    lda format
+    and test_format
+    beq pas_affiche
+    lda int_conv+1,x
+    cmp #$30
+    bne pas_test_padding
+
+    lda padding_space
+    bmi test_padding
+    lda int_conv+1,x
+    bne affiche
+
+test_padding:
+    lda do_padding
+    beq padding_fini
+
+    lda write_space
+    beq pas_affiche
+
+    lda #32
+    bne affiche
+padding_fini:
+    lda #$30
+affiche:
+    jsr CHROUT
+pas_affiche:
+    clc
+    lsr test_format
+    inx
+    cpx #6
+    bne suite_affiche
+    pla
+    tax
+    rts
+pas_test_padding:
+    jsr CHROUT
+    lda #0
+    sta do_padding
+    jmp pas_affiche
+
+format:
+    .byte 0
+test_format:
+    .byte 0
+padding_space:
+    .byte 0
+write_space:
+    .byte 0
+do_padding:
+    .byte 0
+}
+
 //---------------------------------------------------------------
 // pprint_path : affiche les éléments d'un objet ppath, pour
 // debug
@@ -1665,6 +1755,14 @@ pas_var:
 msg_pas_var:
     pstring("NIL")
 }
+
+//===============================================================
+// variables routines
+//
+// var_set
+// var_del
+// var_get
+//===============================================================
 
 //---------------------------------------------------------------
 // var_set : crée une variable, affecte une valeur
@@ -1941,6 +2039,8 @@ nb_var_work:
 //===============================================================
 // pstring routines
 //
+// str_split
+// str_empty
 // str_cmp
 // str_cpy
 // str_cat
@@ -1952,6 +2052,112 @@ nb_var_work:
 // str_pat
 // str_expand
 //===============================================================
+
+//----------------------------------------------------
+// str_split : découpe une pstring en fonction d'un
+// séparateur
+// entrée = r0 pstring, X = séparateur
+// en sortie = r0 pstring découpée, A = nb d'éléments
+// C=0 pas de découpe, C=1 découpe effectuée
+//----------------------------------------------------
+
+do_str_split:
+{
+    stx separateur
+    swi str_len
+    sta lgr_total
+    sty decoupe
+    sty nb_items
+    iny
+    sty lgr_en_cours
+    dey
+    mov r1, r0
+    inc r0
+
+parcours:
+    lda lgr_total
+    beq fini
+    mov a, (r0++)
+    cmp separateur
+    bne pas_process_sep
+    lda #1
+    sta decoupe
+    jsr process_sep
+
+pas_process_sep:
+    inc lgr_en_cours
+    dec lgr_total
+    bne parcours
+
+    // traitement dernier
+    jsr process_sep
+
+fini:
+    ldc decoupe
+    lda nb_items
+    rts
+
+process_sep:
+    ldx lgr_en_cours
+    dex
+    txa
+    mov (r1), a
+    mov r1, r0
+    dec r1
+    ldx #0
+    stx lgr_en_cours
+    inc nb_items
+    rts
+
+separateur:
+    .byte 0
+lgr_total:
+    .byte 0
+lgr_en_cours:
+    .byte 0
+decoupe:
+    .byte 0
+nb_items:
+    .byte 0
+}
+
+//----------------------------------------------------
+// str_empty : teste si la chaine en r0 est vide
+// retour C=0 si vide, C=1 si non vide
+// caractères "vides" = espace / tab / espace shifté
+//----------------------------------------------------
+
+do_str_empty:
+{
+    ldy #0
+    mov a, (r0)
+    sta lgr_chaine
+    beq est_vide
+
+test_vide:
+    iny
+    mov a, (r0)
+    cmp #32
+    beq suite_test_vide
+    cmp #9
+    beq suite_test_vide
+    cmp #160
+    beq suite_test_vide
+    bne non_vide
+
+suite_test_vide:
+    dec lgr_chaine
+    bne test_vide
+
+est_vide:
+    clc
+    rts
+non_vide:
+    sec
+    rts
+lgr_chaine:
+    .byte 0
+}
 
 //---------------------------------------------------------------
 // str_cmp : compare 2 pstrings, r0 vs r1, C=1 si OK
@@ -2709,7 +2915,96 @@ lgr_output:
 //
 // prep_path
 // build_path
+// path_get_name
 //===============================================================
+
+//----------------------------------------------------
+// path_get_name : extraction nom seul du path
+//
+// entrée : R0 = path
+// sortie : R1 = pointeur nom
+//----------------------------------------------------
+
+do_path_get_name:
+{
+    ldy #0
+    add r0, #3
+    mov a, (r0)
+    add r0, a
+    inc r0
+    mov r1, r0
+    clc
+    rts
+}
+
+//----------------------------------------------------
+// build_path : construction path cible
+// entrée : r0 = adresse pstring résultat
+// r1 = ppath source
+// si C=0 ajout :, si C=1 pas d'ajout séparateur ":"
+// sortie = r0 à jour = path:nom 
+// X = device du path ou device courant
+//----------------------------------------------------
+
+do_build_path:
+{
+    stc pas_ajout
+
+    mov rsrc, r1
+    mov rdest, r0
+    
+    // raz dest
+    ldy #0
+    tya
+    mov (r0), a
+
+    mov a, (r1)
+    sta options_path
+    and #PPATH.WITH_PATH
+    beq pas_path
+
+    // ajout PATH
+    add r1, #3
+    swi str_cat
+
+pas_path:
+    lda options_path
+    and #PPATH.WITH_NAME
+    beq pas_name
+
+    // ajout NAME, avec séparateur si demandé
+    lda pas_ajout
+    bne pas_ajout_sep
+
+    mov r1, #msg_sep
+    swi str_cat
+
+pas_ajout_sep:
+    mov r1, rsrc
+    add r1, #3
+    mov a, (r1)
+    add r1, a
+    inc r1
+    swi str_cat
+
+pas_name:
+    ldx bios.device
+    ldy #1
+    lda (zsrc), y
+    beq pas_device
+    tax
+
+pas_device:
+    clc
+    rts
+
+options_path:
+    .byte 0
+pas_ajout:
+    .byte 0
+msg_sep:
+    pstring(":")
+}
 
 //---------------------------------------------------------------
 // prep_path : prépare un objet path
@@ -3453,112 +3748,6 @@ fin_lecture:
 }
 
 //----------------------------------------------------
-// str_split : découpe une pstring en fonction d'un
-// séparateur
-// entrée = r0 pstring, X = séparateur
-// en sortie = r0 pstring découpée, A = nb d'éléments
-// C=0 pas de découpe, C=1 découpe effectuée
-//----------------------------------------------------
-
-do_str_split:
-{
-    stx separateur
-    swi str_len
-    sta lgr_total
-    sty decoupe
-    sty nb_items
-    iny
-    sty lgr_en_cours
-    dey
-    mov r1, r0
-    inc r0
-
-parcours:
-    lda lgr_total
-    beq fini
-    mov a, (r0++)
-    cmp separateur
-    bne pas_process_sep
-    lda #1
-    sta decoupe
-    jsr process_sep
-
-pas_process_sep:
-    inc lgr_en_cours
-    dec lgr_total
-    bne parcours
-
-    // traitement dernier
-    jsr process_sep
-
-fini:
-    ldc decoupe
-    lda nb_items
-    rts
-
-process_sep:
-    ldx lgr_en_cours
-    dex
-    txa
-    mov (r1), a
-    mov r1, r0
-    dec r1
-    ldx #0
-    stx lgr_en_cours
-    inc nb_items
-    rts
-
-separateur:
-    .byte 0
-lgr_total:
-    .byte 0
-lgr_en_cours:
-    .byte 0
-decoupe:
-    .byte 0
-nb_items:
-    .byte 0
-}
-
-//----------------------------------------------------
-// str_empty : teste si la chaine en r0 est vide
-// retour C=0 si vide, C=1 si non vide
-// caractères "vides" = espace / tab / espace shifté
-//----------------------------------------------------
-
-do_str_empty:
-{
-    ldy #0
-    mov a, (r0)
-    sta lgr_chaine
-    beq est_vide
-
-test_vide:
-    iny
-    mov a, (r0)
-    cmp #32
-    beq suite_test_vide
-    cmp #9
-    beq suite_test_vide
-    cmp #160
-    beq suite_test_vide
-    bne non_vide
-
-suite_test_vide:
-    dec lgr_chaine
-    bne test_vide
-
-est_vide:
-    clc
-    rts
-non_vide:
-    sec
-    rts
-lgr_chaine:
-    .byte 0
-}
-
-//----------------------------------------------------
 // buffer_write : ecriture bufferisée
 // entrée : R0 = buffer d'écriture, pstring
 // X = id fichier
@@ -3654,6 +3843,15 @@ nb_lu:
     .byte 0
 }
 
+//====================================================
+// file and file buffer routines
+//
+// file_open
+// file_close
+// buffer_read
+// buffer_write
+//====================================================
+
 //----------------------------------------------------
 // file_open : ouverture fichier en lecture
 // r0 : pstring nom, X = canal
@@ -3704,94 +3902,6 @@ error:
 
 canal:
     .byte 0
-}
-
-//----------------------------------------------------
-// path_get_name : extraction nom seul du path
-//
-// entrée : R0 = path
-// sortie : R1 = pointeur nom
-//----------------------------------------------------
-
-do_path_get_name:
-{
-    ldy #0
-    add r0, #3
-    mov a, (r0)
-    add r0, a
-    inc r0
-    mov r1, r0
-    clc
-    rts
-}
-
-//----------------------------------------------------
-// build_path : construction path cible
-// entrée : r0 = adresse pstring résultat
-// r1 = ppath source
-// si C=0 ajout :, si C=1 pas d'ajout séparateur ":"
-// sortie = r0 à jour = path:nom 
-// X = device du path ou device courant
-//----------------------------------------------------
-
-do_build_path:
-{
-    stc pas_ajout
-
-    mov rsrc, r1
-    mov rdest, r0
-    
-    // raz dest
-    ldy #0
-    tya
-    mov (r0), a
-
-    mov a, (r1)
-    sta options_path
-    and #PPATH.WITH_PATH
-    beq pas_path
-
-    // ajout PATH
-    add r1, #3
-    swi str_cat
-
-pas_path:
-    lda options_path
-    and #PPATH.WITH_NAME
-    beq pas_name
-
-    // ajout NAME, avec séparateur si demandé
-    lda pas_ajout
-    bne pas_ajout_sep
-
-    mov r1, #msg_sep
-    swi str_cat
-
-pas_ajout_sep:
-    mov r1, rsrc
-    add r1, #3
-    mov a, (r1)
-    add r1, a
-    inc r1
-    swi str_cat
-
-pas_name:
-    ldx bios.device
-    ldy #1
-    lda (zsrc), y
-    beq pas_device
-    tax
-
-pas_device:
-    clc
-    rts
-
-options_path:
-    .byte 0
-pas_ajout:
-    .byte 0
-msg_sep:
-    pstring(":")
 }
 
 //----------------------------------------------------
@@ -3863,86 +3973,6 @@ devnp:
 silencieux:
     .byte 0
 .print "code_status=$"+toHexString(code_status)
-}
-
-//---------------------------------------------------------------
-// print_int : affichage entier
-// entier dans r0
-// X = format, %PL123456
-// bit 7 = padding avec espace (avec 0 sinon)
-// bit 6 = suppression espaces en tête
-//---------------------------------------------------------------
-
-do_print_int:
-{
-    stx format
-    txa
-    and #%10000000
-    sta padding_space
-    lda format
-    and #%01000000
-    sta write_space
-    lda #%00100000
-    sta test_format
-    lda #1
-    sta do_padding
-    txa
-    pha
-    mov r1, #int_conv
-    jsr bios.do_int2str
-
-    ldx #0
-suite_affiche:
-    lda format
-    and test_format
-    beq pas_affiche
-    lda int_conv+1,x
-    cmp #$30
-    bne pas_test_padding
-
-    lda padding_space
-    bmi test_padding
-    lda int_conv+1,x
-    bne affiche
-
-test_padding:
-    lda do_padding
-    beq padding_fini
-
-    lda write_space
-    beq pas_affiche
-
-    lda #32
-    bne affiche
-padding_fini:
-    lda #$30
-affiche:
-    jsr CHROUT
-pas_affiche:
-    clc
-    lsr test_format
-    inx
-    cpx #6
-    bne suite_affiche
-    pla
-    tax
-    rts
-pas_test_padding:
-    jsr CHROUT
-    lda #0
-    sta do_padding
-    jmp pas_affiche
-
-format:
-    .byte 0
-test_format:
-    .byte 0
-padding_space:
-    .byte 0
-write_space:
-    .byte 0
-do_padding:
-    .byte 0
 }
 
 //---------------------------------------------------------------

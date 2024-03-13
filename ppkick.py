@@ -3,6 +3,7 @@
 import sys
 
 
+
 def get_size(value):
     """
     get_size : get size of operand, 8 or 16 bits
@@ -29,12 +30,18 @@ def param_type(param):
 
     ptype = 'w'
     pval = param
+
+    # immediate if starting with '#'
     if param[0] == '#':
         ptype = 'i'
         pval = param[1:]
+
+    # accumulator if 'A'
     elif param.lower() == 'a':
         ptype = 'a'
         pval = ''
+
+    # register if r<num> or rdest / rsrc
     elif param[0].lower()=='r' and (param[1:].isnumeric() or param.lower() in ['rdest', 'rsrc']):
         ptype = 'r'
         if param.lower() == 'rdest':
@@ -43,6 +50,8 @@ def param_type(param):
             pval = 'reg_zsrc'
         else:
             pval = param[1:].lower()
+
+    # sub / indirect if parenthesis
     elif param[0] == '(':
             ptype = 's'
             pval = param[2:-1].lower()
@@ -90,9 +99,6 @@ for line in hin:
         ptype1, pval1 = param_type(elems[3])
         if ptype0 != 'a' and ptype1 != 'a':
             newline = 'st' + ptype1 + '_' + ptype0 + '(' + pval0 + ', ' + pval1 + ')'
-            print(ptype0, pval0)
-            print(ptype1, pval1)
-            print('**%s' % newline)
         elif ptype0 == 'a' and ptype1 in ['s', 'si']:
             # mov a,(r0) / mov a,(r0++)
             newline = 'getbyte'
@@ -204,4 +210,3 @@ for line in hin:
 
 hout.close()
 hin.close()
-
