@@ -581,7 +581,10 @@ Changes directory
 .. can be used for parent directory
 ```
 **CMD**
-
+```
+    CMD <command>
+    Send command to current disk drive
+```
 **CAT**
 ```
 cat <file> [<file> ...]
@@ -594,6 +597,14 @@ print file(s) contents to screen
     P = paginates output
     H = hexdump
     A = read C64 binary start address for hexdump
+```
+**KOALA**
+```
+    koala <image>
+    load and view Koala format image (.KLA file)
+    options :
+    K = wait for keypress
+    W = wait for 80 vblanks
 ```
 **MKDIR**
 ```
@@ -616,10 +627,25 @@ mem <start-address> [<end-address>]
 Dump memory to screen
 ```
 **CP**
+```
+    CP [-<options>] <file> [<file(s)>] <destination>
+    Copy file(s) to destination
 
+    options :
+    C = compatibility mode (don't try to use the CBM DOS commands)
+    M = move mode, perform MV
+```
+**MV**
+```
+    MV [-<options>] <file> [<file(s)>] <destination>
+    Move file(s) to destination
+
+    options :
+    C = compatibility mode (don't try to use the CBM DOS commands)
+```
 **CLEAR**
 ```
-Clear screen
+    Clear screen
 ```
 **SAVEENV**
 
@@ -635,6 +661,9 @@ Read user input and store it into a variable
 **FILTER**
 
 **HISTORY**
+```
+    Lists the history of typed commands
+```
 
 # Internal commands aliases
 
