@@ -466,6 +466,14 @@ error:
 // (F = Force)
 //----------------------------------------------------
 
+cmd_mv:
+{
+    mov r1, #cmd_cp.options_cp
+    jsr check_options
+    ora #cmd_cp.OPT_M
+    jmp cmd_cp.options_ok
+}
+
 cmd_cp:
 {
     needs_parameters(2)
@@ -473,6 +481,7 @@ cmd_cp:
     sta bios.save_device
     mov r1, #options_cp
     jsr check_options
+options_ok:
     sta options
 
     // destination = dernier paramètre
@@ -499,6 +508,9 @@ write_str:
 
 do_cp:
 {
+    lda bios.device
+    sta bios.save_device
+
     // préparation path source, nom en entrée dans R0
     mov r1, #work_path
     swi prep_path
@@ -2558,8 +2570,6 @@ internal_commands:
     .word shell.cmd_mem
     pstring("CP")
     .word shell.cmd_cp
-    pstring("LL")
-    .word shell.cmd_ll
     pstring("CLEAR")
     .word shell.cmd_clear
     pstring("MORE")
@@ -2578,6 +2588,10 @@ internal_commands:
     .word shell.cmd_wait
 
     //-- aliases
+    pstring("LL")
+    .word shell.cmd_ll
+    pstring("MV")
+    .word shell.cmd_mv
     pstring("$")
     .word shell.cmd_ls
     .byte 1, 64 // @
