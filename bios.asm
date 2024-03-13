@@ -904,15 +904,10 @@ nb_copie:
 
 //---------------------------------------------------------------
 // list_size : renvoie la taille de la liste dans R0 dans A
+// même code pour le moment que str_len
 //---------------------------------------------------------------
 
-do_list_size:
-{
-    ldy #0
-    lda (zr0),y
-    clc
-    rts
-}
+.label do_list_size = do_str_len
 
 //---------------------------------------------------------------
 // list_get : renvoie la nème valeur de pstring de la liste

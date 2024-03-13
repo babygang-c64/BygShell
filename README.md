@@ -224,11 +224,20 @@ Y = bit to set in A
     On exit : C=1 and R0=value if OK, C=0 otherwhise
 ```
 **list_del**
-
+```
+    Removes one entry from list
+    R0 = list object
+    X = object # to remove
+    On exit : R0 = list object pointer
+```
 **list_print**
 
 **list_size**
-
+```
+    Returns size of list
+    R0 = list object
+    On exit : A = number of elements in list
+```
 **list_reset**
 
 ## Parameters
