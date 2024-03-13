@@ -650,55 +650,6 @@ text_device:
 }
 
 //---------------------------------------------------------------
-// str_cat : ajoute une chaine
-// r0 = r0 + r1
-// sortie Y = 0
-//---------------------------------------------------------------
-
-do_str_cat:
-{
-    // pos_new = écriture = lgr + 1
-    ldy #0    
-    lda (zr0),y
-    tay
-    iny
-    sty pos_new
-
-    // pos_copie = lecture = 1
-    // lgr_ajout = nb de caractères à copier
-    ldy #0
-    lda (zr1),y
-    sta lgr_ajout
-    iny
-    sty pos_copie
-
-copie:
-    ldy pos_copie
-    lda (zr1),y
-    ldy pos_new
-    sta (zr0),y
-    inc pos_new
-    inc pos_copie
-    dec lgr_ajout
-    bne copie
-
-    // mise à jour longueur = position écriture suivante - 1
-    dec pos_new
-    lda pos_new
-    ldy #0
-    sta (zr0),y
-    clc
-    rts
-
-pos_copie:
-    .byte 0
-pos_new:
-    .byte 0
-lgr_ajout:
-    .byte 0
-}
-
-//---------------------------------------------------------------
 // file_load : charge un fichier et execute code en $080d
 // r0 = nom fichier
 // si c=1 utilise R1 comme adresse de chargement et ne tente pas
@@ -783,6 +734,17 @@ adresse_dest:
 }
 
 .print "do_file_load=$"+toHexString(do_file_load)
+
+//===============================================================
+// list routines
+//
+// list_print
+// list_del
+// list_size
+// list_get
+// list_reset
+// list_add
+//===============================================================
 
 //---------------------------------------------------------------
 // list_print : affiche liste
@@ -1981,6 +1943,7 @@ nb_var_work:
 //
 // str_cmp
 // str_cpy
+// str_cat
 // str_ins
 // str_del
 // str_chr
@@ -2033,6 +1996,55 @@ copie:
     clc
     adc #1
     rts
+}
+
+//---------------------------------------------------------------
+// str_cat : ajoute une chaine
+// r0 = r0 + r1
+// sortie Y = 0
+//---------------------------------------------------------------
+
+do_str_cat:
+{
+    // pos_new = écriture = lgr + 1
+    ldy #0    
+    lda (zr0),y
+    tay
+    iny
+    sty pos_new
+
+    // pos_copie = lecture = 1
+    // lgr_ajout = nb de caractères à copier
+    ldy #0
+    lda (zr1),y
+    sta lgr_ajout
+    iny
+    sty pos_copie
+
+copie:
+    ldy pos_copie
+    lda (zr1),y
+    ldy pos_new
+    sta (zr0),y
+    inc pos_new
+    inc pos_copie
+    dec lgr_ajout
+    bne copie
+
+    // mise à jour longueur = position écriture suivante - 1
+    dec pos_new
+    lda pos_new
+    ldy #0
+    sta (zr0),y
+    clc
+    rts
+
+pos_copie:
+    .byte 0
+pos_new:
+    .byte 0
+lgr_ajout:
+    .byte 0
 }
 
 //---------------------------------------------------------------

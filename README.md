@@ -251,7 +251,9 @@ Y = bit to set in A
 ## Disk I/O
 
 **set_device**
-
+```
+    Selects the current device according to the value in variable "device"
+```
 **prep_path**
 ```
     Builds a ppath object from a pstring
