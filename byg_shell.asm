@@ -429,6 +429,11 @@ cmd_cmd:
     needs_parameters(1)
     ldx #1
     swi list_get, parameters.list
+    jmp do_cmd_send
+}
+
+do_cmd_send:
+{
     ldx #15
     sec
     swi file_open
@@ -592,9 +597,8 @@ delete_source:
     jsr bios.do_set_device_from_int
     ldx #1
     swi str_ins, work_filename, cmd_delete
-    swi pprintnl, work_filename
-    clc
-    rts
+    mov r1, r0
+    jmp do_cmd_send
 
 cmd_delete:
     pstring("S:")
