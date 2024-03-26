@@ -23,7 +23,7 @@ zr0h to zr1h : higher bytes of registers
 ```
 ### macro instructions with pre-processor for 16 bit registers
 
-**MOV**
+**MOV / MOVI**
 ```
 mov r<n>, r<m>      : register n = register m
 mov r<n>, #<addr>   : register n = address
@@ -33,6 +33,7 @@ mov a, (r<n>++)     : a = byte at register n address, increment register
 mov (r<n>), a       : store a at register n address
 mov (r<n>++),a      : store a at register n address, increment register
 mov (r<n>), r<m>    : store register m at address in register n
+movi (r<n>), r<m>   : store r<m> at address stored at location r<n>
 mov r<n>, (r<m>)    : store value at address in register m
 mov <addr>, <addr2> : copy word at addr2 to addr
 mov <addr>, #<val>  : copy value to addr

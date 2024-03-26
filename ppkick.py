@@ -129,7 +129,7 @@ for line in hin:
         if ptype0 == 's' and ptype1 == 'r':
             newline = 'stir_s(' + pval0 + ',' + pval1 + ')'
         else:
-            wait('movi error')
+            input('movi error')
         hout.write(newline + '\n')
 
     # PUSH, POP, INC, DEC, INCW, DECW
