@@ -316,7 +316,7 @@ pas_inc:
 // add addr, value at addr2
 //---------------------------------------------------------------
 
-.macro addw_w(addr, addr2)
+.macro adda_w(addr, addr2)
 {
     clc
     lda addr
