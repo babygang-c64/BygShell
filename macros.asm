@@ -520,13 +520,13 @@ no_jump:
 }
 
 //---------------------------------------------------------------
-// str_s(reg_dest, reg) : (reg_dest) = reg
-// stores reg at address in reg_dest
+// stir_s(reg_dest, reg) : ((reg_dest)) = reg
+// stores reg at address in (reg_dest)
 //
-// mov (r1), r0
+// movi (r1), r0
 //---------------------------------------------------------------
 
-.macro str_s(reg_dest, reg)
+.macro stir_s(reg_dest, reg)
 {
     ldy #0
     lda (zr0+2*reg_dest),y
@@ -541,6 +541,22 @@ no_jump:
     lda zr0h+2*reg
     sta (ztmp),y
     dey
+}
+
+//---------------------------------------------------------------
+// str_s(reg_dest, reg) : (reg_dest) = reg
+// stores reg at address in reg_dest
+//
+// mov (r1), r0
+//---------------------------------------------------------------
+
+.macro str_s(reg_dest, reg)
+{
+    ldy #0
+    lda zr0+2*reg
+    sta (zr0+2*reg_dest),y
+    lda zr0h+2*reg
+    sta (zr0h+2*reg_dest),y
 }
 
 //---------------------------------------------------------------

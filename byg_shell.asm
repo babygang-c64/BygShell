@@ -18,11 +18,14 @@
 // espace pour les scripts
 //---------------------------------------------------------------
 
-.label script_data = $6800
+.label script_data = *
+
+    .fill $200,0
 
 script_labels:
     pstring("START")
     .word script_data
+next_labels:
 
 //---------------------------------------------------------------
 // espace de nom et valeurs pour les variables
@@ -99,6 +102,8 @@ work_pprint:
 .print "work_path2=$"+toHexString(work_path2)
 .print "work_name=$"+toHexString(work_name)
 .print "work_pprint=$"+toHexString(work_pprint)
+
+* = * "end of workspaces"
 
 //====================================================
 // SHELL
@@ -1737,6 +1742,8 @@ toplevel:
     jsr check_history
 
     // lecture de la commande, retour en r0 = input_buffer
+    //sec
+    //ldx #10
     swi input
     
     // ajout à l'historique

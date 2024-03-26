@@ -120,6 +120,18 @@ for line in hin:
         #print('new [%s]' % newline)
         hout.write(newline + '\n')
 
+    # MOVI
+        
+    elif instruction == 'movi':
+        ptype0, pval0 = param_type(elems[1])
+        ptype1, pval1 = param_type(elems[3])
+
+        if ptype0 == 's' and ptype1 == 'r':
+            newline = 'stir_s(' + pval0 + ',' + pval1 + ')'
+        else:
+            wait('movi error')
+        hout.write(newline + '\n')
+
     # PUSH, POP, INC, DEC, INCW, DECW
 
     elif instruction in ['push', 'pop', 'inc', 'dec']:

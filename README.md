@@ -153,6 +153,9 @@ Y = bit to set in A
 **input**
 ```
     Accept input from the user, return results in input_buffer,
+    On input : 
+        C=1 : editor mode, cursor up / down not bringing history values,
+              and X contains maximum length for line 
     On exit : R0 = input_buffer
 
     Typing is in insert mode

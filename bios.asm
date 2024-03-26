@@ -1046,6 +1046,10 @@ pas_inc:
 //---------------------------------------------------------------
 // input : saisie chaine, retour dans r0 et stockage dans
 //         input_buffer
+//
+// en entrée :
+// si C=1, pas de gestion de l'historique sur curseur up/down
+// et X = lgr max saisie, sinon lgr max saisie = 255
 //---------------------------------------------------------------
 
 .label BACKSPACE=$14
@@ -1064,6 +1068,12 @@ pas_inc:
 
 do_input:
 {
+    stc editor_mode
+    bne is_editor_mode
+    ldx #255
+is_editor_mode:
+    stx max_input
+
     // position de lecture dans l'historique = 
     // nb éléments car sera décrémenté à chaque
     // appuis de CURSOR UP
@@ -1156,6 +1166,9 @@ pas_right:
     cmp #UP
     bne pas_up
 
+    lda editor_mode
+    bne get_next
+
     jsr clear_line
     jsr get_prev_history
     jmp get_next
@@ -1165,8 +1178,13 @@ pas_up:
     cmp #DOWN
     bne pas_down
 
+    lda editor_mode
+    bne proxy_get_next
+
     jsr clear_line
     jsr get_next_history
+
+proxy_get_next:
     jmp get_next
 
     //-- CTRL-K : clear to end -----
@@ -1224,6 +1242,14 @@ normal_end:
     inc max_x
 
 print_et_next:
+    ldx write_x
+    cpx max_input
+    bne print_et_next_ok
+    dec write_x
+    inc $d020
+    jmp get_next
+
+print_et_next_ok:
     jsr write_char
     jmp get_next
 
@@ -1244,6 +1270,11 @@ fin_input:
     mov r0, #input_buffer
     clc
     rts
+
+editor_mode:
+    .byte 0
+max_input:
+    .byte 255
 
     //-------------------------------------------------------
     // get_prev_history et get_next_history : récupère un 
@@ -1797,7 +1828,7 @@ do_var_set:
     add ptr_last_value, a
 
     // ecriture adresse valeur à la suite du nom
-    mov (r3), r4
+    movi (r3), r4
 
     // ajoute longueur adresse valeur à ptr_last_variable
     lda #2
@@ -2201,6 +2232,7 @@ copie:
     pla
     clc
     adc #1
+    ldy #0
     rts
 }
 
@@ -4266,6 +4298,14 @@ lgr_commande:
 
 do_script_read:
 {
+    // raz stockage script
+    lda #0
+    sta next_labels
+    sta script_data
+    mov r3, #next_labels
+    mov r2, #script_data
+
+    // ouverture script,channel #8
     ldx #8
     clc
     swi file_open
@@ -4292,10 +4332,22 @@ next_line:
     beq next_line
     //swi pprintnl, input_buffer
 
-    jsr CLRCHN
-    jsr shell.command_process
-    ldx #8
-    jsr CHKIN
+    // si ligne commence par ':' = label, enregistre
+    cmp #':'
+    bne process_script
+
+    mov r1, r3
+    //inc r0
+    swi str_cpy
+    add r1, a
+    breakpoint()
+    mov (r1), r2
+    add r1, #2
+    lda #0
+    tay
+    mov (r1), a
+    mov r3, r1
+    breakpoint()
     jmp next_line
 
 fini:
@@ -4303,6 +4355,27 @@ fini:
     swi file_close
     clc
     rts
+
+process_script:
+
+    // copie la ligne
+    mov r1, r2
+    swi str_cpy
+    add r2, a
+
+    push r2
+    push r3
+
+    // execute la commande
+    jsr CLRCHN
+    jsr shell.command_process
+    ldx #8
+    jsr CHKIN
+
+    pop r3
+    pop r2
+    jmp next_line
+
 }
 
 //===============================================================
