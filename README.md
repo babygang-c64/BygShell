@@ -26,7 +26,7 @@ zr0h to zr1h : higher bytes of registers
 **MOV / MOVI**
 ```
 mov r<n>, r<m>      : register n = register m
-mov r<n>, #<addr>   : register n = address
+mov r<n>, #<m>      : register n = word m
 mov r<n>, <addr>    : register n = content at address
 mov a, (r<n>)       : a = byte at register n address
 mov a, (r<n>++)     : a = byte at register n address, increment register
@@ -37,6 +37,7 @@ movi (r<n>), r<m>   : store r<m> at address stored at location r<n>
 mov r<n>, (r<m>)    : store value at address in register m
 mov <addr>, <addr2> : copy word at addr2 to addr
 mov <addr>, #<val>  : copy value to addr
+mov <addr>, r<n>    : store r<n> at address <addr>
 mov r<n>, a         : register n = a
 ```
 
@@ -48,7 +49,7 @@ add r<n>, #<imm>    : add 8bit or 16bit immediate value to register n
 add r<n>, a         : add a to register n
 add <addr>, a       : add a to value at address <addr>
 add <addr>, #<imm>  : add 8bit or 16bit immediate to value at address <addr>
-// todo  add <addr>, <addr2>
+add <addr>, <addr2> : add value at <addr2> to value at <addr> 
 ```
 **INC, DEC**
 ```

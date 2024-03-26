@@ -173,6 +173,9 @@ for line in hin:
             else:
                 newline = 'addw_w(' + pval0 +', ' + pval1 + ')'
             hout.write(newline + '\n')
+        elif ptype0 == 'w' and ptype1 == 'w':
+            newline = 'adda_w(' + pval0 +', ' + pval1 + ')'
+            hout.write(newline + '\n')
         else:
             print(ptype0, pval0)
             print(ptype1, pval1)

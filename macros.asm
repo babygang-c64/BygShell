@@ -308,7 +308,23 @@ pas_inc:
     lda addr+1
     adc #>value
     sta addr+1
-pas_inc:
+}
+
+//---------------------------------------------------------------
+// adda_w(addr, add2) : (addr) += 16 bits att addr2
+// Y preserved
+// add addr, value at addr2
+//---------------------------------------------------------------
+
+.macro addw_w(addr, addr2)
+{
+    clc
+    lda addr
+    adc addr2
+    sta addr
+    lda addr+1
+    adc addr2+1
+    sta addr+1
 }
 
 //---------------------------------------------------------------
