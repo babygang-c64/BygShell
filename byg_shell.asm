@@ -223,7 +223,7 @@ lgr_entree:
 }
 
 //----------------------------------------------------
-// cmd_echo : affiche le paramètre expansé
+// cmd_echo : affiche les paramètres expansés
 //----------------------------------------------------
 
 cmd_echo:
