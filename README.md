@@ -63,12 +63,12 @@ swap r<n>, r<m> : swap registers
 ```
 **STC / LDC**
 ```
-stc <address> : store carry as 1 or 0 to address
-ldc <address> : get carry from 1 or 0 at address
+stc <address> : store carry as 1 or 0 to <address>
+ldc <address> : get carry from 1 or 0 at <address>
 ```
 **JNE / JEQ / JCC / JCS**
 ```
-long branches, Bill style
+long branches, Bill style, missing some variants
 ```
 **SWI**
 ```

@@ -1817,7 +1817,7 @@ script_execute:
     clc
     rts
 
-    // ouverture en lecture, nom dans r0
+    // open file for reading, name in r0
     ldx #8
     clc
     swi file_open
