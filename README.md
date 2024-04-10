@@ -55,7 +55,8 @@ add <addr>, <addr2> : add value at <addr2> to value at <addr>
 ```
 inc r<n> : increment register
 dec r<n> : decrement register
-// todo incw <addr>, inc / inc a
+incw <addr> : increment value at address <addr>
+decw <addr> : decrement value at address <addr>
 ```
 **SWAP**
 ```
@@ -75,6 +76,11 @@ long branches, Bill style, missing some variants
 swi <bios_function>                    : calls bios function
 swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 = addr2
 ```
+***SWN**
+```
+swn : swap nybles of A
+```
+
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max 255 characters

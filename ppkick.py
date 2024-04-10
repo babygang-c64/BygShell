@@ -148,6 +148,11 @@ for line in hin:
         else:
             newline = line
         hout.write(newline + '\n')
+    
+    # SWN
+
+    elif instruction == 'swn':
+        hout.write('swn()\n')
 
     # ADD
 
