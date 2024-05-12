@@ -1744,6 +1744,7 @@ toplevel:
     // lecture de la commande, retour en r0 = input_buffer
     //sec
     //ldx #10
+    clc
     swi input
     
     // ajout à l'historique

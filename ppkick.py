@@ -141,7 +141,11 @@ for line in hin:
         else:
             newline = line
         hout.write(newline + '\n')
-    elif instruction in ['incw', 'decw']:
+    elif instruction in ['incw', 'decw', 'inw', 'dew']:
+        if instruction == 'inw':
+            instruction = 'incw'
+        if instruction == 'dew':
+            instruction = 'decw'
         ptype0, pval0 = param_type(elems[1])
         if ptype0 == 'w':
             newline = instruction[0:3] + '_w(' + pval0 + ')'
@@ -149,10 +153,15 @@ for line in hin:
             newline = line
         hout.write(newline + '\n')
     
-    # SWN
+    # SWP
 
-    elif instruction == 'swn':
-        hout.write('swn()\n')
+    elif instruction == 'swp':
+        hout.write('swp()\n')
+
+    # SXY
+
+    elif instruction == 'sxy':
+        hout.write('sxy()\n')
 
     # ADD
 

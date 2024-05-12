@@ -55,8 +55,8 @@ add <addr>, <addr2> : add value at <addr2> to value at <addr>
 ```
 inc r<n> : increment register
 dec r<n> : decrement register
-incw <addr> : increment value at address <addr>
-decw <addr> : decrement value at address <addr>
+incw <addr>, inw <addr> : increment value at address <addr>
+decw <addr>, dew <addr> : decrement value at address <addr>
 ```
 **SWAP**
 ```
@@ -76,9 +76,13 @@ long branches, Bill style, missing some variants
 swi <bios_function>                    : calls bios function
 swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 = addr2
 ```
-***SWN**
+***SWP**
 ```
-swn : swap nybles of A
+swp : swap nybles of A
+```
+***SXY**
+```
+sxy : swap X and Y
 ```
 
 ### pStrings
