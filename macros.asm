@@ -1,13 +1,17 @@
 //===============================================================
-// MACROS : ZP pseudo registers macros
+// MACROS
+//
+// ZP pseudo registers macros, mostly for use with
+// the pre-processor
 //===============================================================
 
 #importonce
 
 //---------------------------------------------------------------
 // ZP pseudo registers
-// $39 -> $48 = r0 à r7
-// ztmp en b0/b1 pour swap
+//
+// $39 -> $48 = 8x16bits registers r0 to r7
+// ztmp -> b0/b1 for swap
 //---------------------------------------------------------------
 
 .label zr0 = $39
@@ -47,22 +51,24 @@
 .label zsave = $b2
 
 //===============================================================
-// macros pour pstring, plist, ppath
+// macros for pstring, plist, ppath data structures
 //===============================================================
 
 //---------------------------------------------------------------
-// pstring : chaine de type pascal, avec 1er octet = longueur
+// pstring(<string>)
+//
+// defines a pascal type string with length in first byte
+// (0 to 254 characters strings)
 //---------------------------------------------------------------
 
-.macro pstring(chaine)
+.macro pstring(string_data)
 {
- .byte chaine.size()
- .text chaine
- //.print "pstring =[" + chaine + "] lgr=" + chaine.size()
+ .byte string_data.size()
+ .text string_data
 }
 
 //---------------------------------------------------------------
-// plist : objet liste, manipule des éléments pstring
+// plist : list object, list of pstring strings
 //---------------------------------------------------------------
 
 .macro plist(ptr_work)
@@ -78,9 +84,9 @@
 }
 
 //---------------------------------------------------------------
-// ppath : objet path après parsing
+// ppath : parsed path object
 //
-// format path :
+// path format :
 // [<device>:][[<partition>][/ ou //<path>/]][:<filename>]
 // device et partition à 0 si absent
 // type path : présence des différents éléments dans le path
@@ -100,12 +106,12 @@
 {
 type:
     .byte 0
-    // device et partition
+    // device and partition
 device:
     .byte 0
 partition:
     .byte 0
-    // path et nom
+    // path and filename
 path:
     .byte 0
 filename:
@@ -124,6 +130,8 @@ filename:
 // Naming rule : 
 //      ST<ore>[R<egister>/W<ord>] to [R<egister>/W<ord>]
 //===============================================================
+
+// todo, cf 65ce02 : BSR, PHW, PLW
 
 //---------------------------------------------------------------
 // <instruction>_<destination><source>
@@ -236,8 +244,8 @@ filename:
 // getbyte(reg)   : A = byte(reg)
 // getbyte_r(reg) : A = byte(reg), reg++
 // Y should be 0
-// devrait être getnextbyte / getbyte
-// préprocesseur à voir : mov a,(r0) / mov a,(r0++)
+// better be getnextbyte / getbyte
+// mov a,(r0) / mov a,(r0++)
 //---------------------------------------------------------------
 
 .macro getbyte_r(reg)
@@ -258,8 +266,8 @@ pas_inc:
 // setbyte(reg)   : byte(reg) = A
 // setbyte_r(reg) : byte(reg) = A, reg++
 // Y should be 0
-// devrait être setbyte / setnextbyte
-// mov (r0), a et mov (r0++), a
+// better be setbyte / setnextbyte
+// mov (r0), a / mov (r0++), a
 //---------------------------------------------------------------
 
 .macro setbyte_r(reg)
@@ -576,8 +584,21 @@ no_jump:
 }
 
 //---------------------------------------------------------------
+// sxy() : swap X and Y, preserves A
+//---------------------------------------------------------------
+
+.macro sxy()
+{
+    stx ztmp
+    sty ztmp+1
+    ldx ztmp+1
+    ldy ztmp
+}
+
+//---------------------------------------------------------------
 // swapr_r(reg1, reg2) : swaps reg1, reg2
 // Y preserved
+// swap r0, r1
 //---------------------------------------------------------------
 
 .macro swapr_r(reg1, reg2)
@@ -600,6 +621,7 @@ no_jump:
 //---------------------------------------------------------------
 // dec_r(reg) : reg--
 // Y preserved
+// dec r0
 //---------------------------------------------------------------
 
 .macro dec_r(reg)
@@ -614,6 +636,7 @@ pas_zero:
 //---------------------------------------------------------------
 // inc_r(reg) : reg++
 // Y preserved
+// inc r0
 //---------------------------------------------------------------
 
 .macro inc_r(reg)
@@ -626,6 +649,7 @@ pas_zero:
 
 //---------------------------------------------------------------
 // inc_w(addr) : (addr)++
+// incw <addr> / inw <addr>
 //---------------------------------------------------------------
 
 .macro inc_w(addr)
@@ -638,6 +662,7 @@ pas_zero:
 
 //---------------------------------------------------------------
 // dec_w(addr) : (addr)--
+// decw <addr> / dew <addr>
 //---------------------------------------------------------------
 
 .macro dec_w(addr)
@@ -649,15 +674,11 @@ pas_zero:
     dec addr
 }
 
-//===============================================================
-// General purpose macros
-//===============================================================
-
 //---------------------------------------------------------------
-// swn : swap nybbles
+// swp : swap nybbles of register A
 //---------------------------------------------------------------
 
-.macro swn()
+.macro swp()
 {
     asl
     adc #$80
@@ -666,6 +687,10 @@ pas_zero:
     adc #$80
     rol
 }
+
+//===============================================================
+// General purpose macros
+//===============================================================
 
 //---------------------------------------------------------------
 // breakpoint : wait

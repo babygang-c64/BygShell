@@ -1,5 +1,6 @@
 # BygShell
 Shell like commands for the C64
+Code by papapower@babygang
 
 ## Shell commands
 
@@ -55,7 +56,8 @@ add <addr>, <addr2> : add value at <addr2> to value at <addr>
 ```
 inc r<n> : increment register
 dec r<n> : decrement register
-// todo incw <addr>, inc / inc a
+incw <addr>, inw <addr> : increment value at address <addr>
+decw <addr>, dew <addr> : decrement value at address <addr>
 ```
 **SWAP**
 ```
@@ -63,18 +65,27 @@ swap r<n>, r<m> : swap registers
 ```
 **STC / LDC**
 ```
-stc <address> : store carry as 1 or 0 to address
-ldc <address> : get carry from 1 or 0 at address
+stc <address> : store carry as 1 or 0 to <address>
+ldc <address> : get carry from 1 or 0 at <address>
 ```
 **JNE / JEQ / JCC / JCS**
 ```
-long branches, Bill style
+long branches, Bill style, missing some variants
 ```
 **SWI**
 ```
 swi <bios_function>                    : calls bios function
 swi <bios_function>, <addr> [,<addr2>] : calls bios function with r0 = addr, r1 = addr2
 ```
+***SWP**
+```
+swp : swap nybles of A
+```
+***SXY**
+```
+sxy : swap X and Y
+```
+
 ### pStrings
 
 Pstrings are Pascal like strings consisting of a length byte followed by max 255 characters

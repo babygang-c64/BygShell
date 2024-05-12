@@ -1744,6 +1744,7 @@ toplevel:
     // lecture de la commande, retour en r0 = input_buffer
     //sec
     //ldx #10
+    clc
     swi input
     
     // ajout à l'historique
@@ -1817,7 +1818,7 @@ script_execute:
     clc
     rts
 
-    // ouverture en lecture, nom dans r0
+    // open file for reading, name in r0
     ldx #8
     clc
     swi file_open
