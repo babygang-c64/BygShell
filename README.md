@@ -1,5 +1,6 @@
 # BygShell
 Shell like commands for the C64
+Code by papapower@babygang
 
 ## Shell commands
 
