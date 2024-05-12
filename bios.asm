@@ -11,7 +11,8 @@
 
 .namespace bios 
 {
-// liste des fonctions du BIOS
+
+// BIOS functions list
 
 .label reset=0
 .label pprint=1
@@ -72,6 +73,8 @@
 .label script_read=56
 .label path_get_name=57
 .label parameters_export=58
+
+// bios_jmp : bios jump table
 
 bios_jmp:
     .word do_reset
@@ -138,6 +141,9 @@ bios_jmp:
 
 bios_reset:
     lda #bios.reset
+
+    // bios_exec : executes BIOS function, function # in A
+
 bios_exec:
     php
     asl
@@ -146,19 +152,19 @@ bios_exec:
     jmp bios_jmpl:(bios_jmp)
 
 //===============================================================
-// bios functions et variables
+// bios functions and variables
 //===============================================================
 
 //---------------------------------------------------------------
-// reset : démarrage
+// reset : startup cleansing
 //
-// raz des variables
-// affiche le message de départ
+// reset of variables
+// prints the starting banner
 //---------------------------------------------------------------
 
 do_reset:
 {
-    // memory : all except kernal and IO
+    // memory : all RAM access except kernal and IO
     lda #MEMIOKERNAL
     sta $01
 
@@ -192,18 +198,18 @@ do_reset:
     sec
     swi lsblk
     stx bios.device
-    // ici A = nb devices et X = 1er device
+    // here A = nb of devices and X = ID of 1st device found
 
-    // tente de sélectionner le device dans variable device
+    // try to select the device from the variable device value
     swi set_device
     bcc device_ok
 
-    // si KO essaye le 1er device trouvé
+    // if not OK, try the 1st device found
     ldx bios.device
     jsr bios.do_set_device_from_int
 
 device_ok:
-    // start shell
+    // start shell toplevel loop
     clc
     jmp shell.toplevel
 
@@ -212,7 +218,7 @@ text_banner:
 }
 
 //---------------------------------------------------------------
-// str_len : renvoie dans A la longueur de la pstring en R0
+// str_len : returns in A the length of pstring in R0
 //---------------------------------------------------------------
 
 do_str_len:
@@ -223,8 +229,8 @@ do_str_len:
 }
 
 //---------------------------------------------------------------
-// str_lstrip : enleve les espaces en début de chaine
-// entrée : R0, sortie : R0 modifié
+// str_lstrip : remove spaces at the begining of string
+// input : R0, output : R0 modified
 //---------------------------------------------------------------
 
 do_str_lstrip:
@@ -261,7 +267,7 @@ longueur:
 }
 
 //---------------------------------------------------------------
-// is_filter : C=1 si filtre fichier dans R0 (? ou *)
+// is_filter : C=1 if string in R0 contains filter chars (? or *)
 //---------------------------------------------------------------
 
 do_is_filter:
@@ -284,7 +290,7 @@ filtre_trouve:
 }
 
 //---------------------------------------------------------------
-// wait : attente r0 vblanks, entrée = r0 hexa
+// wait : wait for r0 vblanks, input = r0 hex value in string
 //---------------------------------------------------------------
 
 do_wait:
@@ -312,8 +318,8 @@ fin_wait:
 }
 
 //---------------------------------------------------------------
-// int2str : int r0 vers buffer pstring pointée par r1
-// le buffer cible doit faire 6 octets
+// int2str : convert int in r0 to pstring in r1
+// target buffer for pstring r1 should be 16 bytes at least
 //---------------------------------------------------------------
 
 do_int2str:
@@ -402,9 +408,10 @@ int_conv:
     pstring("000000")
 
 //---------------------------------------------------------------
-// str2int : chaine r0 vers r1, partie basse dans A
-// 8 bits seulement pour l'instant
-// préserve r0 / x / y
+// str2int : converts pstring in r0 to int in r1,
+// lower part in A
+// 8 bits only for now
+// preserves r0 / x / y
 //---------------------------------------------------------------
 
 do_str2int:
