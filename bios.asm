@@ -2704,18 +2704,18 @@ pos_mp:
 }
 
 //---------------------------------------------------------------
-// str_expand : expanse une pstring
-// entrée : R0, sortie : R1
+// str_expand : expanses a pstring
+// input : R0, output : R1
 //
-// séquences expansées :
+// expansed sequences :
 //
-// %V<variable>% = valeur variable
-// %P<reg> = pstring à l'adresse du registre <reg>
-// %R<reg> = valeur hexa du registre <reg>
+// %V<variable>% = value of environment variable <variable>
+// %P<reg> = pstring at address of register <reg> value
+// %R<reg> = hex value of register <reg> content
 // %% = %
-// %C<nibble> = couleur <nibble> ou caractère de contrôle :
+// %C<nibble> = color <nibble> or control character :
 //              R = reverse, N = normal
-// %H<hex> = caractère code <hex>
+// %H<hex> = character code <hex>
 //---------------------------------------------------------------
 
 do_str_expand:
@@ -2956,10 +2956,10 @@ lgr_output:
 //===============================================================
 
 //----------------------------------------------------
-// path_get_name : extraction nom seul du path
+// path_get_name : extract name from path
 //
-// entrée : R0 = path
-// sortie : R1 = pointeur nom
+// input : R0 = path
+// output : R1 = pointer to name
 //----------------------------------------------------
 
 do_path_get_name:
@@ -3339,7 +3339,7 @@ type:
 //===============================================================
 
 //---------------------------------------------------------------
-// set_bit : positionne le bit Y à 1 dans A
+// set_bit : sets bit #Y to 1 into A
 //---------------------------------------------------------------
 
 set_bit:
@@ -3351,7 +3351,7 @@ bit_list:
 }
 
 //---------------------------------------------------------------
-// is_digit : C=1 si A est un digit, C=0 sinon
+// is_digit : C=1 if A is a digit, else C=0
 //---------------------------------------------------------------
 
 is_digit:
@@ -3719,9 +3719,20 @@ msg_type_15:
     pstring("15")
 }
 
+//====================================================
+// file and file buffer routines
+//
+// file_open
+// file_close
+// file_readline
+// buffer_read
+// buffer_write
+//====================================================
+
+
 //----------------------------------------------------
-// file_close : fermeture fichier et reset I/O
-// entrée : X = canal
+// file_close : closes file and resets I/O
+// input : X = channel to close
 //----------------------------------------------------
 
 do_file_close:
@@ -3734,9 +3745,9 @@ do_file_close:
 }
 
 //----------------------------------------------------
-// file_readline : lecture d'une ligne dans un fichier
+// file_readline : reads one line from file
 //
-// r0 = buffer réception
+// r0 = input buffer
 // sortie : work_buffer, A = longueur
 // c=0 : ok, c=1 : fin de fichier
 // lecture de 255 octets max
@@ -3785,7 +3796,7 @@ fin_lecture:
 }
 
 //----------------------------------------------------
-// buffer_write : ecriture bufferisée
+// buffer_write : buffered file write
 // entrée : R0 = buffer d'écriture, pstring
 // X = id fichier
 //----------------------------------------------------
@@ -3815,7 +3826,7 @@ pos_lecture:
 }
 
 //----------------------------------------------------
-// buffer_read : lecture bufferisée
+// buffer_read : buffered file read
 // entrée : R0 = buffer de lecture (pstring)
 // longueur buffer = pstring, longueur = max buffer
 // C=0 lecture normale, C=1 arrêt si 0d ou 0a (ligne)
@@ -3879,15 +3890,6 @@ lecture_ligne:
 nb_lu:
     .byte 0
 }
-
-//====================================================
-// file and file buffer routines
-//
-// file_open
-// file_close
-// buffer_read
-// buffer_write
-//====================================================
 
 //----------------------------------------------------
 // file_open : ouverture fichier en lecture
@@ -4091,12 +4093,12 @@ var_param:
 }
 
 //----------------------------------------------------
-// parameters_loop : execute tant qu'il y a des 
-// paramètres dans la liste
+// parameters_loop : execute as long as there are still
+// parameters into the list
 //
-// entrée r0 adresse sous-routine
-// r1 = adresse plist des paramètres
-// dans la boucle r0 = paramètre transmis
+// input : r0 sub-routine address to call
+// r1 = plist of parameters
+// within loop : r0 = parameter
 //----------------------------------------------------
 
 do_parameters_loop:
@@ -4396,7 +4398,7 @@ process_script:
 //===============================================================
 
 //---------------------------------------------------------------
-// directory_open : lecture répertoire
+// directory_open : reads directory
 //---------------------------------------------------------------
 
 do_directory_open:
@@ -4424,8 +4426,8 @@ open_ok:
 }
 
 //---------------------------------------------------------------
-// directory_set_filter : change le filtre
-// en entrée r0 = nouveau filtre nom et X = filtre types
+// directory_set_filter : sets name and types filter
+// input r0 = new name filter, X = types filter
 //---------------------------------------------------------------
 
 do_directory_set_filter:
@@ -4438,9 +4440,9 @@ do_directory_set_filter:
 }
 
 //---------------------------------------------------------------
-// directory_get_entry : lecture entrée répertoire, retour r0
+// directory_get_entry : reads one directory entry, output in r0
 //
-// C=1 : fin
+// C=1 : end
 // A=0 : blocks free
 //---------------------------------------------------------------
 
@@ -4575,7 +4577,7 @@ buffer_entry:
 }
 
 //---------------------------------------------------------------
-// directory_close : fermeture répertoire
+// directory_close : closes directory
 //---------------------------------------------------------------
 
 do_directory_close:
@@ -4587,7 +4589,7 @@ do_directory_close:
 }
 
 //---------------------------------------------------------------
-// directory_get_entries : lecture entrées vers liste
+// directory_get_entries : reads directory entries to list
 // entrée X = filtre types, R0 = filtre nom
 // A = nb d'entrées
 //---------------------------------------------------------------
@@ -4666,7 +4668,7 @@ dirname:
 diskname:
     .byte 0
 
-    // Types de fichier
+    // Filetypes
 
     .label TYPE_PRG=1
     .label TYPE_SEQ=2
