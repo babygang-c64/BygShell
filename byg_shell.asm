@@ -15,7 +15,7 @@
 * = $7000 "Workspace data"
 
 //---------------------------------------------------------------
-// espace pour les scripts
+// workspace for scripts
 //---------------------------------------------------------------
 
 .label script_data = *
@@ -28,7 +28,7 @@ script_labels:
 next_labels:
 
 //---------------------------------------------------------------
-// espace de nom et valeurs pour les variables
+// workspace with names and values for internal variables
 //---------------------------------------------------------------
 
     .align $100
@@ -65,7 +65,13 @@ version_value:
 values_end:
 
 //---------------------------------------------------------------
-// buffers de saisie et de travail
+// input and work buffers
+//
+// input_buffer is the user input buffer space
+// work_buffer and work_buffer2 are general purpose buffers
+// work_io is for file I/O
+// work_entries, work_path, work_path2, work_filename and
+// work_filename2 are for directory, path and filename work
 //---------------------------------------------------------------
 
     .align $100
@@ -107,7 +113,10 @@ work_pprint:
 
 //====================================================
 // SHELL
-// start address moved into $8000 cartridge space
+// start address moved into $8000 cartridge space so
+// the shell can be restarted with a reset.
+// Still, source code is not ROM compatible due to
+// some remaining self-modifying bits
 //====================================================
 
 * = $8000 "shell start"
@@ -139,7 +148,7 @@ warmstart:
 }
 
 //----------------------------------------------------
-// insère le BIOS à partir de $8100 (fixe)
+// insert BIOS entries starting $8100 (fixed address)
 //----------------------------------------------------
 
 * = $8100
@@ -147,17 +156,17 @@ warmstart:
 #import "bios_pp.asm"
 
 //----------------------------------------------------
-// suite code shell
+// remaining shell code
 //----------------------------------------------------
 
 * = * "shell code"
 
 //----------------------------------------------------
-// extract_cmd : découpe commande / paramètres
+// extract_cmd : split command and parameters
 //
-// A = séparateur, R0 = entrée
-// en sortie : R0 commande et R1 paramètre
-// C=1 si paramètres trouvés
+// A = separator, R0 = input
+// output : R0 command, R1 paramters
+// C=1 if parameters are present
 //----------------------------------------------------
 
 extract_cmd:
@@ -182,9 +191,9 @@ next_byte:
     bne next_byte
     beq fin_extract
 
-    // separateur trouvé : découpe la chaine : ajuste
-    // la longueur pour r0, remplace le séparateur par la longueur
-    // restant
+    // separator found : cut the string, adjust the length ajuste
+    // for r0, replaces separator byte by remaining length
+    //
     // lgr commande = lgr_entree - lgr_parcours
     // lgr param = lgr_parcours - 1 
 
@@ -223,7 +232,7 @@ lgr_entree:
 }
 
 //----------------------------------------------------
-// cmd_echo : affiche les paramètres expansés
+// cmd_echo : prints expansed parameters
 //----------------------------------------------------
 
 cmd_echo:
@@ -260,7 +269,8 @@ pos_param:
     .byte 0
 
 //----------------------------------------------------
-// cmd_lsblk : détecte les disques, retour A = nb disques
+// cmd_lsblk : tries to detect disks and disks types,
+// output A = nb of disks found
 //----------------------------------------------------
 
 cmd_lsblk:
@@ -269,7 +279,8 @@ cmd_lsblk:
     rts
 
 //----------------------------------------------------
-// cmd_dump : affiche les variables
+// cmd_dump : prints all environment variables
+// (name and value) paginates if option present
 //----------------------------------------------------
 
 cmd_dump:
@@ -362,7 +373,7 @@ txt_autre:
 }
 
 //----------------------------------------------------
-// cmd_set : affecte une valeur à une variable
+// cmd_set : sets an environment variable value
 //----------------------------------------------------
 
 cmd_set:
@@ -424,9 +435,9 @@ device_var:
 }
 
 //----------------------------------------------------
-// cmd_cmd : envoie une commande au device courant
+// cmd_cmd : sets command to current device
 //
-// r1 : commande à envoyer
+// r1 : command to send
 //----------------------------------------------------
 
 cmd_cmd:
@@ -459,15 +470,16 @@ error:
 }
 
 //----------------------------------------------------
-// cmd_cp : copie
+// cmd_cp : file copy
 //
-// objectifs : 
-// copie fichier 1 pour 1
-// copier les n-1 fichiers vers n si n est un path
+// objectives :
+// 1 to 1 file copy
+// n-1 fichiers to n/ if n is a path
 //
 // options :
 //  M = move
-//  C = compatible (pas de commande locale)
+//  C = compatible (force compatible file copy, not
+// using disk copy command)
 // (F = Force)
 //----------------------------------------------------
 
@@ -694,9 +706,9 @@ close_files:
 }
 
 //----------------------------------------------------
-// needs_parameter : si pas de paramètres (C=0),
-// affiche erreur et dépile le retour pour ne pas
-// executer la commande
+// needs_parameter : if no parameters (C=0),
+// prints error and pulls return address from stack in
+// order to avoid executing command
 //----------------------------------------------------
 
 .macro needs_parameters(nb_params)
@@ -718,11 +730,11 @@ ko:
 }
 
 //----------------------------------------------------
-// check_options : vérifie les options données dans
-// les paramètres
-// entrée = lecture parameters, r1 = valid options
-// sortie : c=0 OK, c=1 et A=0 pas d'options
-// c=1 et A=1 : option invalide
+// check_options : check the options given in the
+// parameters
+// input = reads parameters, r1 = valid options string
+// output : c=0 OK, c=1 and A=0 no options
+// c=1 and A=1 : invalid option was given
 //----------------------------------------------------
 
 check_options:
@@ -747,9 +759,10 @@ options_ok:
 }
 
 //----------------------------------------------------
-// option_pagine : gestion option de pagination pour les
-// affichages dans CAT / LS
-// entrée : si C=1 alors initialisation
+// option_pagine : pagination option processing for
+// printing in CAT / LS commands
+// input : if C=1 performs intialisation of number of
+// lines already printed. subsequent calls C=0
 //----------------------------------------------------
 
 option_pagine:
@@ -787,9 +800,12 @@ msg_suite:
 }
 
 //----------------------------------------------------
-// cmd_input : saisie utilisateur, stockage dans
-// la variable indiquée en paramètre
+// cmd_input : user input, storage into the environment
+// variable indicated as parameter
+// if [invite] is given : prints invite first
+//
 // input [invite] <variable>
+//
 // options :
 //  K = single key press
 //  P = print hex code of key pressed
@@ -882,7 +898,8 @@ cmd_wait:
 }
 
 //----------------------------------------------------
-// cmd_filter : test filtre
+// cmd_filter : test for filter, not a real command,
+// has to go
 //----------------------------------------------------
 
 cmd_filter:
@@ -907,15 +924,15 @@ msg_match:
 }
 
 //----------------------------------------------------
-// cmd_cat : affichage fichier
+// cmd_cat : print file(s)
 //
 // options : 
-// N = numérote toutes les lignes
-// E = affiche un $ en fin de ligne
-// B = numérote les lignes non vides
-// P = pagine la sortie
+// N = numbers all lines
+// E = prints a $ sign at the end of line
+// B = numbers non empty lines
+// P = paginates output
 // H = hexdump
-// A = lecture adresse début dans fichier pour hexdump
+// A = reads start address in file for hexdump
 //----------------------------------------------------
 
 cmd_more:
@@ -1188,9 +1205,9 @@ error:
 }
 
 //----------------------------------------------------
-// cmd_do_cmd : envoi de commande quelconque
-// r1 : préfixe commande à envoyer
-// r0 : path à utiliser
+// cmd_do_cmd : sends command to current device
+// r1 : prefix of command to send
+// r0 : path to use
 //----------------------------------------------------
 
 cmd_do_cmd:
@@ -1273,10 +1290,13 @@ avec_sep:
 }
 
 //---------------------------------------------------------------
-// get_options : lecture des options présentes en r0 si r0
-// contient des options (commence par "-"), 
-// r1 = liste des options
-// retour : si ok C=0, A = options, sinon C=1 et A = 0
+// get_options : reads options presents in r0 if r0
+// contains options (options should start with "-"),
+//
+// input : r0 = parameters string,
+// r1 = list of options available for command
+//
+// output : if ok C=0, A = options bitmap, else C=1 and A = 0
 //---------------------------------------------------------------
 
 do_get_options:
@@ -1362,7 +1382,7 @@ nb_options_total:
 }
 
 //----------------------------------------------------
-// cmd_mkdir : crée un répertoire
+// cmd_mkdir : create directory
 //----------------------------------------------------
 
 cmd_mkdir:
@@ -1379,7 +1399,7 @@ commande:
 }
 
 //----------------------------------------------------
-// cmd_rmdir : supprime un répertoire
+// cmd_rmdir : remove directory
 //----------------------------------------------------
 
 cmd_rmdir:
@@ -1396,7 +1416,7 @@ commande:
 }
 
 //----------------------------------------------------
-// cmd_rm : supprime un ou plusieurs fichier
+// cmd_rm : remove file(s)
 //----------------------------------------------------
 
 cmd_rm:
@@ -1416,7 +1436,7 @@ commande:
 }
 
 //----------------------------------------------------
-// cmd_cd : change de répertoire
+// cmd_cd : directory change
 //----------------------------------------------------
 
 cmd_cd:
@@ -1460,13 +1480,13 @@ cmd_clear:
 //  0 -> disk name
 //  1 -> blocks free
 //  2 -> size
-// si C=1 en entrée, vérifie paramètres en r1
+// if C=1, check parameters in r1
 // 
 // options :
 //
-// L = liste en format long
-// D = liste seulement les répertoires
-// P = pagine la sortie
+// L = long format
+// D = only directories
+// P = paginates output
 //----------------------------------------------------
 
 cmd_ll:
@@ -1681,7 +1701,7 @@ options_ls:
 }
 
 //----------------------------------------------------
-// toplevel
+// toplevel : toplevel loop
 //----------------------------------------------------
 
 * = * "toplevel"
@@ -1689,8 +1709,7 @@ options_ls:
 .print "history_list=$"+toHexString(history_list)
 
 //------------------------------------------------------------
-// check_history : si on dépasse le max historique 
-// on supprime 1 enreg
+// check_history : if max is reached then removes 1 record
 //------------------------------------------------------------
 
 check_history:
@@ -1710,8 +1729,8 @@ pas_max:
 
 //------------------------------------------------------------
 // add_history :
-// ajoute une copie à l'historique, sauf si c'est history 
-// ou si la commande est vide
+// add command to history, if command is not "history"
+// and command is not empty
 //------------------------------------------------------------
 
 add_history:
@@ -1883,9 +1902,9 @@ data:
 }
 
 //---------------------------------------------------------------
-// get_params : découpage commande /  paramètres / options
-// entrée en R0 = liste des paramètres
-// sortie dans parameters : options et liste commande / params
+// get_params : split command /  parameters / options
+// input R0 = parameters list
+// output in parameters : options and list of command / params
 //---------------------------------------------------------------
 
 do_get_params:
@@ -1935,9 +1954,8 @@ lecture_chaine:
 
     //--------------------------------------------------------
     //-- OPTIONS ----
-    // si options, lecture des options, 
-    // si plusieurs fois présent
-    // alors HS, sinon recopie dans parameters.options
+    // if options, reads options, 
+    // KO if multiple, else copy to parameters.options
     //--------------------------------------------------------
 
     mov r1, #parameters.options
@@ -1951,8 +1969,8 @@ teste_suite_chaine:
     jmp fini
 
     //--------------------------------------------------------
-    //-- GUILLEMETS ----
-    // process chaine separateur guillemets
+    //-- QUOTES ----
+    // process string quotes separator
     //--------------------------------------------------------
 
 pas_options:
@@ -1975,9 +1993,9 @@ suite_3439:
     jmp teste_suite_chaine
 
     //--------------------------------------------------------
-    //-- ESPACE ----
-    // séparateur espace
-    // = idem guillemets mais séparateur espace pour fin
+    //-- SPACE ----
+    // space separator
+    // = same as quotes with space for ending
     //--------------------------------------------------------
 
 pas_guillemets:
@@ -1989,9 +2007,8 @@ pas_guillemets:
     jmp teste_suite_chaine
 
     //--------------------------------------------------------
-    //-- AUTRES ----
-    // pas espace : on est directement sur une chaine, lis 
-    // et stocke la suite
+    //-- OTHER ----
+    // not space : that's a string, reads and store 
     //--------------------------------------------------------
 
 pas_espace:
@@ -2004,7 +2021,7 @@ pas_espace:
     jmp teste_suite_chaine
 
     //-------------------------------------------------------------
-    // process_guillemets
+    // process_guillemets : quotes processing
     //-------------------------------------------------------------
 
 process_guillemets:
@@ -2053,7 +2070,7 @@ add_to_list:
     rts
 
     //-------------------------------------------------------------
-    // pb options : erreur
+    // options issue : error
     //-------------------------------------------------------------
 
 pb_options:
@@ -2061,7 +2078,7 @@ pb_options:
     rts
 
     //-------------------------------------------------------------
-    // process_traite_options : lecture et copie des options
+    // process_traite_options : reads and copy options
     //-------------------------------------------------------------
 
 process_traite_options:
@@ -2131,7 +2148,7 @@ lgr_copie:
 }
 
 //---------------------------------------------------------------
-// cmd_koala : affiche une image koala painter en mémoire
+// cmd_koala : reads and show a koala file picture
 //---------------------------------------------------------------
 
 cmd_koala:
@@ -2180,7 +2197,7 @@ pas_W:
 }
 
 //---------------------------------------------------------------
-// cmd_history : affiche l'historique des commandes
+// cmd_history : prints command history
 //---------------------------------------------------------------
 
 cmd_history:
@@ -2191,9 +2208,11 @@ cmd_history:
 }
 
 //---------------------------------------------------------------
-// cmd_save_env : exporte les variables d'environnement
+// cmd_save_env : exports environment variables
 //
-// paramètre : path/nom pour enregistrement
+// Not working yet
+//
+// parameter : path/name for writing
 //---------------------------------------------------------------
 
 cmd_save_env:
@@ -2303,7 +2322,9 @@ erreur_open:
 }
 
 //---------------------------------------------------------------
-// cmd_help : affiche la liste des commandes internes
+// cmd_help : lists internal commands, if used with parameter
+// then parameter is command name to fetch help for
+// if <command>.hlp file exists in config path then prints it
 //---------------------------------------------------------------
 
 cmd_help:
@@ -2342,7 +2363,7 @@ help_message:
 }
 
 //---------------------------------------------------------------
-// cmd_quit : commande quit, quitte le shell
+// cmd_quit : exits the shell prompt
 //---------------------------------------------------------------
 
 cmd_quit:
@@ -2360,8 +2381,7 @@ txt_bye:
     pstring("%C1BYEm")
 
 //----------------------------------------------------
-// cmd_load : charge un fichier en mémoire à l'adresse
-// indiquée
+// cmd_load : loads file in memory to given address
 //----------------------------------------------------
 
 cmd_load:
@@ -2379,10 +2399,10 @@ cmd_load:
 }
 
 //----------------------------------------------------
-// cmd_mem : affiche un contenu mémoire
-// paramètres utilisés : 1er = adresse début (hex)
-// 2ème si présent = adresse fin, sinon affiche 8
-// octets max
+// cmd_mem : memory dump
+// parameters : 1st = start address (hex)
+// 2nd if present = end address, else prints 8 bytes 
+// of memory max
 //----------------------------------------------------
 
 cmd_mem:
@@ -2451,7 +2471,7 @@ bytes:
 }
 
 //---------------------------------------------------------------
-// print_hex_buffer : hexdump buffer en r0, adresse r1
+// print_hex_buffer : hexdump buffer in r0, address r1
 //---------------------------------------------------------------
 
 print_hex_buffer:
@@ -2538,7 +2558,9 @@ nb_total:
 } // namespace shell
 
 //---------------------------------------------------------------
-// liste des commandes internes du shell
+// internal shell commands list
+// aliases can be made by adding entries with the same execution
+// address
 //---------------------------------------------------------------
 
     .align $100
@@ -2611,7 +2633,7 @@ history_kw:
     .byte 0
 
 //---------------------------------------------------------------
-// messages d'erreur
+// error messages
 //---------------------------------------------------------------
 
 msg_error:

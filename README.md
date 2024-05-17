@@ -1,6 +1,7 @@
 # BygShell
 Shell like commands for the C64
-Code by papapower@babygang
+Code and bugs by papapower@babygang
+2023-2024
 
 ## Shell commands
 
@@ -9,6 +10,11 @@ Code by papapower@babygang
 When a command is not found in the internal commands list then a lookup is done on disk in the current directory.
 If the command name is a script name (ends with .sh) then all commands from the script are read and executed.
 If the command name is a binary then it is launched (for now starting at $080d) Must have a basic header with a SYS.
+
+### Configuration of HELP command
+
+The CONFIG environment variable contains the path to help files for individual help requests on
+commands. Filename convention is <command_name>.HLP
 
 ### Internal commands
 

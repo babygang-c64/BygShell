@@ -500,8 +500,8 @@ nb_variables:
 }
 
 //---------------------------------------------------------------
-// error : affiche message d'erreur
-// adresse message en R0
+// error : prints error message
+// pstring of message in R0
 //---------------------------------------------------------------
 
 do_error:
@@ -595,8 +595,7 @@ pas_device_1:
 }
 
 //---------------------------------------------------------------
-// set_device_from_int : sélectionne device avec la valeur
-// en entrée device dans X
+// set_device_from_int : selects device using value in X
 //---------------------------------------------------------------
 
 do_set_device_from_int:
@@ -623,8 +622,7 @@ device_tmp:
 }
 
 //---------------------------------------------------------------
-// set_device : sélectionne device en fonction de la valeur dans
-// la variable DEVICE
+// set_device : selects device using environment variable DEVICE
 //---------------------------------------------------------------
 
 do_set_device:
@@ -754,8 +752,8 @@ adresse_dest:
 //===============================================================
 
 //---------------------------------------------------------------
-// list_print : affiche liste
-// entrée : r0 = ptr objet liste
+// list_print : prints list
+// input : r0 = ptr to list object
 //---------------------------------------------------------------
 
 do_list_print:
@@ -791,9 +789,9 @@ lgr_elem:
 }
 
 //---------------------------------------------------------------
-// list_del : supprime une entrée dans une liste
-// entrée : r0 = ptr objet liste, X = numéro entrée à supprimer
-// retour : r0 = ptr objet liste à jour
+// list_del : removes entry in a list
+// input : r0 = list object address, X = rank of item to remove
+// output : r0 = updated list object
 //---------------------------------------------------------------
 
 do_list_del:
@@ -936,7 +934,7 @@ lgr_elem:
 }
 
 //---------------------------------------------------------------
-// list_reset : remet à zero une liste
+// list_reset : resets a list to empty status
 // paramètres : r0 = ptr objet liste, r1 = ptr data liste
 //---------------------------------------------------------------
 
@@ -972,7 +970,7 @@ do_list_reset:
 }
 
 //---------------------------------------------------------------
-// list_add : ajoute pstring dans une liste
+// list_add : adds pstring into list
 // paramètres : r0 = ptr objet liste, r1 = pstring
 // renvoie le numéro de l'item dans la liste dans A
 //---------------------------------------------------------------
@@ -1051,7 +1049,7 @@ pas_inc:
 }
 
 //---------------------------------------------------------------
-// input : saisie chaine, retour dans r0 et stockage dans
+// input : user input, returns in r0 and input stored into the
 //         input_buffer
 //
 // en entrée :
@@ -1284,8 +1282,8 @@ max_input:
     .byte 255
 
     //-------------------------------------------------------
-    // get_prev_history et get_next_history : récupère un 
-    // élément dans l'historique
+    // get_prev_history et get_next_history : retrieves an
+    // history element
     //-------------------------------------------------------
 
 get_next_history:
@@ -1547,11 +1545,11 @@ nb_copie:
 //===============================================================
 
 //---------------------------------------------------------------
-// pprint_int : affichage entier
-// entier dans r0
-// X = format, %PL123456
-// bit 7 = padding avec espace (avec 0 sinon)
-// bit 6 = suppression espaces en tête
+// pprint_int : integer print
+// integer in r0
+// X = format for printing , %PL123456
+// bit 7 = padding with spaces (if not set padding with 0)
+// bit 6 = suppress leading spaces
 //---------------------------------------------------------------
 
 do_pprint_int:
@@ -1659,15 +1657,15 @@ msg_path:
 }
 
 //---------------------------------------------------------------
-// pprint : affiche une chaine de type pascal en r0
-// pprintnl : idem avec retour à la ligne
+// pprint : prints pstring in R0
+// pprintnl : same with new line
 // 
-// valeurs expansées :
+// expansed values :
 //
 // %% = %
-// %P<n°> = affiche la chaîne à l'adresse de R<n°>
-// %R<n°> = affiche la valeur en hexa $AAAA de R<n°> 
-// %V<var>% = affiche la valeur de la variable <var>
+// %P<n°> = prints string at register address R<n°>
+// %R<n°> = prints hex value $AAAA of register R<n°> content
+// %V<var>% = prints environment variable <var> value
 //---------------------------------------------------------------
 
 do_pprint:
@@ -1772,8 +1770,16 @@ do_pprinthex8a:
     rts
 }
 
+//===============================================================
+// variables routines
+//
+// var_set
+// var_del
+// var_get
+//===============================================================
+
 //---------------------------------------------------------------
-// var_get : lecture variable
+// var_get : read variable value
 // r0 : nom variable -> r1 : contenu et C = 1
 // pas trouvé => C = 0 et contenu = NIL
 //---------------------------------------------------------------
@@ -1793,14 +1799,6 @@ pas_var:
 msg_pas_var:
     pstring("NIL")
 }
-
-//===============================================================
-// variables routines
-//
-// var_set
-// var_del
-// var_get
-//===============================================================
 
 //---------------------------------------------------------------
 // var_set : crée une variable, affecte une valeur
